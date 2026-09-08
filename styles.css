@@ -167,3 +167,27 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
   .dialog-actions{flex-direction:column-reverse}
   .dialog-actions .button{width:100%}
 }
+
+/* V1.7 — base alimentaire personnelle saisie depuis les étiquettes */
+.personal-food-form{margin:16px 0;padding:16px;border:1px solid #c9e5d5;border-radius:16px;background:#f6fbf8}
+.personal-food-form h4,.personal-food-section h4{margin:0 0 12px;font-size:15px}
+.personal-food-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+.personal-food-form-actions .button{min-height:44px}
+.personal-food-section{margin:18px 0 10px}
+.personal-food-list{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:white}
+.personal-food-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border-top:1px solid var(--line)}
+.personal-food-row:first-child{border-top:0}
+.personal-food-main{display:grid;gap:3px;min-width:0}
+.personal-food-main strong{font-size:14px}
+.personal-food-main span{font-size:12px;color:var(--muted);font-weight:700}
+.personal-food-main small{font-size:11px;color:var(--muted);line-height:1.35}
+.personal-food-actions{display:flex;gap:10px;align-items:center}
+.personal-food-actions button{border:0;background:transparent;color:var(--green);font-size:12px;font-weight:800;cursor:pointer;padding:6px 0}
+.personal-food-actions .danger-link{color:var(--red)}
+.nutrition-chip.personal{background:#f0ebff;color:#6045a0;border-color:#d7caef}
+@media (max-width:520px){
+  .personal-food-row{grid-template-columns:1fr}
+  .personal-food-actions{justify-content:flex-end}
+  .personal-food-form-actions{flex-direction:column-reverse}
+  .personal-food-form-actions .button{width:100%}
+}

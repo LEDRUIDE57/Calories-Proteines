@@ -51,6 +51,7 @@ const defaultState = {
   },
   meals: [],
   activities: [],
+  personalFoods: [],
   weights: [{ id: 'initial-weight', date: new Date().toISOString(), dateKey: localDateKey(), kg: 74 }]
 };
 
@@ -59,6 +60,7 @@ let selectedImageData = null;
 let currentAnalysis = null;
 let selectedDateKey = localDateKey();
 let editingMealId = null;
+let editingPersonalFoodId = null;
 
 const $ = id => document.getElementById(id);
 const round = (n, d = 0) => Number(Number(n).toFixed(d));
@@ -99,7 +101,7 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return structuredClone(defaultState);
     const parsed = JSON.parse(raw);
-    const weights = Array.isArray(parsed.weights) && parsed.weights.length ? parsed.weights : structuredClone(defaultState.weights);
+    const weights = Array.isArray(parsed.weights) ? parsed.weights : structuredClone(defaultState.weights);
     return {
       ...structuredClone(defaultState),
       ...parsed,
@@ -110,6 +112,7 @@ function loadState() {
       },
       meals: Array.isArray(parsed.meals) ? parsed.meals : [],
       activities: Array.isArray(parsed.activities) ? parsed.activities : [],
+      personalFoods: Array.isArray(parsed.personalFoods) ? parsed.personalFoods : [],
       weights: weights.map(w => {
         const date = w.date || new Date().toISOString();
         return { ...w, id: w.id || makeId(), date, dateKey: w.dateKey || localDateKey(new Date(date)) };
@@ -372,6 +375,12 @@ function normalizeFoodName(value = '') {
 function findLocalFoodReference(name) {
   const wanted = normalizeFoodName(name);
   if (!wanted) return null;
+
+  // Priorité 1 : références personnelles saisies par l'utilisateur.
+  const personal = (state.personalFoods || []).find(food => normalizeFoodName(food.name) === wanted);
+  if (personal) return { ...personal, key: `personal:${personal.id}`, dbType: 'personal' };
+
+  // Priorité 2 : petite base générale intégrée.
   const aliases = {
     apple: ['pomme'], banana: ['banane'], bread: ['pain'], carrot: ['carotte', 'carottes'],
     cheese: ['fromage type emmental', 'emmental'], chicken: ['poulet', 'poulet cuit'], egg: ['oeuf', 'œuf'],
@@ -382,9 +391,30 @@ function findLocalFoodReference(name) {
   };
   for (const [key, food] of Object.entries(FOOD_DB)) {
     const candidates = [food.name, ...(aliases[key] || [])].map(normalizeFoodName);
-    if (candidates.includes(wanted)) return { ...food, key };
+    if (candidates.includes(wanted)) return { ...food, key, dbType: 'general' };
   }
   return null;
+}
+
+function personalFoodById(id) {
+  return (state.personalFoods || []).find(food => food.id === id) || null;
+}
+
+function manualFoodReference(selectKey) {
+  if (!selectKey || selectKey === 'custom') return null;
+  if (selectKey.startsWith('personal:')) return personalFoodById(selectKey.slice('personal:'.length));
+  return FOOD_DB[selectKey] || null;
+}
+
+function personalFoodMeta(food) {
+  const parts = [];
+  const packageWeightG = Number(food.packageWeightG || 0);
+  const units = Number(food.units || 0);
+  const unitName = String(food.unitName || 'unité').trim() || 'unité';
+  if (packageWeightG > 0) parts.push(`${round(packageWeightG, 1)} g le paquet`);
+  if (units > 0) parts.push(`${round(units, 1)} ${unitName}${units > 1 && !unitName.endsWith('s') ? 's' : ''}`);
+  if (packageWeightG > 0 && units > 0) parts.push(`1 ${unitName} ≈ ${round(packageWeightG / units, 1)} g`);
+  return parts.join(' · ');
 }
 
 function prepareAnalysis(analysis) {
@@ -433,7 +463,7 @@ function applyNutritionReference(index, kcal100, protein100, source, note = '') 
   item.calories = item.kcalPerGram * grams;
   item.protein_g = item.proteinPerGram * grams;
   item.nutritionSource = source;
-  item.nutritionStatus = source === 'local-db' ? 'Recalculé avec la base alimentaire.' : 'Recalculé pour le nouvel aliment.';
+  item.nutritionStatus = source === 'personal-db' ? 'Recalculé avec votre base personnelle.' : source === 'local-db' ? 'Recalculé avec la base alimentaire.' : 'Recalculé pour le nouvel aliment.';
   item.nutritionNote = String(note || '');
   item.nutritionError = false;
 }
@@ -448,7 +478,10 @@ async function recalculateNutritionForName(index) {
 
   const local = findLocalFoodReference(foodName);
   if (local) {
-    applyNutritionReference(index, local.kcal100, local.protein100, 'local-db', `Référence locale : ${local.kcal100} kcal et ${local.protein100} g protéines / 100 g.`);
+    const source = local.dbType === 'personal' ? 'personal-db' : 'local-db';
+    const label = local.dbType === 'personal' ? 'Votre référence personnelle' : 'Référence locale';
+    const meta = local.dbType === 'personal' ? personalFoodMeta(local) : '';
+    applyNutritionReference(index, local.kcal100, local.protein100, source, `${label} : ${local.kcal100} kcal et ${local.protein100} g protéines / 100 g.${meta ? ` ${meta}.` : ''}`);
     renderAnalysisEditor();
     return;
   }
@@ -497,11 +530,12 @@ function renderAnalysisEditor() {
     <div class="analysis-edit-row" data-analysis-index="${index}">
       <div class="analysis-main">
         <label class="analysis-name-label">Aliment
-          <input class="analysis-name-input" data-analysis-name="${index}" type="text" value="${escapeHtml(item.name)}" />
+          <input class="analysis-name-input" data-analysis-name="${index}" type="text" list="food-name-suggestions" value="${escapeHtml(item.name)}" />
         </label>
         <div class="analysis-flags">
           ${needsQuantityConfirmation(item.name) ? '<span class="confirm-chip">Quantité à confirmer</span>' : ''}
           ${item.nutritionSource === 'text-ai' ? '<span class="nutrition-chip">Nutrition recalculée</span>' : ''}
+          ${item.nutritionSource === 'personal-db' ? '<span class="nutrition-chip personal">Ma base personnelle</span>' : ''}
           ${item.nutritionSource === 'local-db' ? '<span class="nutrition-chip local">Base alimentaire</span>' : ''}
         </div>
         ${item.nutritionStatus === 'loading' ? '<div class="nutrition-message loading">Recalcul des calories et protéines…</div>' : ''}
@@ -628,6 +662,54 @@ async function analyzePhoto() {
   } finally { $('analyze-photo').disabled = false; }
 }
 
+function populateFoodNameSuggestions() {
+  const list = $('food-name-suggestions');
+  if (!list) return;
+  const names = [
+    ...(state.personalFoods || []).map(food => food.name),
+    ...Object.values(FOOD_DB).map(food => food.name)
+  ];
+  const unique = [...new Set(names.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+  list.innerHTML = unique.map(name => `<option value="${escapeHtml(name)}"></option>`).join('');
+}
+
+function populateManualFoodSelect(preferred = '') {
+  populateFoodNameSuggestions();
+  const select = $('manual-food');
+  if (!select) return;
+  const previous = preferred || select.value;
+  select.innerHTML = '<option value="">Choisir un aliment…</option>';
+
+  const personalFoods = [...(state.personalFoods || [])].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  if (personalFoods.length) {
+    const group = document.createElement('optgroup');
+    group.label = 'Ma base personnelle';
+    personalFoods.forEach(food => {
+      const option = document.createElement('option');
+      option.value = `personal:${food.id}`;
+      option.textContent = food.name;
+      group.appendChild(option);
+    });
+    select.appendChild(group);
+  }
+
+  const general = document.createElement('optgroup');
+  general.label = 'Base générale';
+  Object.entries(FOOD_DB).sort((a, b) => a[1].name.localeCompare(b[1].name, 'fr')).forEach(([key, food]) => {
+    const option = document.createElement('option');
+    option.value = key;
+    option.textContent = food.name;
+    general.appendChild(option);
+  });
+  select.appendChild(general);
+
+  const custom = document.createElement('option');
+  custom.value = 'custom';
+  custom.textContent = 'Autre aliment…';
+  select.appendChild(custom);
+  if ([...select.options].some(o => o.value === previous)) select.value = previous;
+}
+
 function setupManualEntry() {
   const updateManualFields = () => {
     const key = $('manual-food').value;
@@ -638,26 +720,30 @@ function setupManualEntry() {
       if (isCustom) { $('manual-calories').value = ''; $('manual-protein').value = ''; }
       return;
     }
-    const food = FOOD_DB[key];
+    const food = manualFoodReference(key);
     if (!food) return;
     const grams = Math.max(1, Number($('manual-grams').value || 100));
     $('manual-grams').value = grams;
     $('manual-calories').value = Math.round(food.kcal100 * grams / 100);
     $('manual-protein').value = round(food.protein100 * grams / 100, 1);
-    $('manual-reference').textContent = `Référence : ${food.kcal100} kcal et ${food.protein100} g protéines / 100 g. Valeurs indicatives.`;
+    const personal = key.startsWith('personal:');
+    const meta = personal ? personalFoodMeta(food) : '';
+    $('manual-reference').textContent = `${personal ? 'Ma référence personnelle' : 'Référence'} : ${food.kcal100} kcal et ${food.protein100} g protéines / 100 g.${meta ? ` ${meta}.` : ' Valeurs indicatives.'}`;
   };
+  populateManualFoodSelect();
   $('manual-food').addEventListener('change', updateManualFields);
   $('manual-grams').addEventListener('input', () => { const key = $('manual-food').value; if (key && key !== 'custom') updateManualFields(); });
   $('save-manual').addEventListener('click', () => {
     const key = $('manual-food').value;
     if (!key) return alert('Choisissez un aliment dans le menu.');
-    const name = key === 'custom' ? $('manual-name').value.trim() : FOOD_DB[key]?.name;
+    const food = manualFoodReference(key);
+    const name = key === 'custom' ? $('manual-name').value.trim() : food?.name;
     if (!name) return alert('Indiquez le nom de l’aliment.');
     const calories = Number($('manual-calories').value);
     const protein = Number($('manual-protein').value || 0);
     const dateKey = $('manual-date').value || selectedDateKey;
     if (!Number.isFinite(calories) || calories < 0) return alert('Indiquez les calories à ajouter.');
-    addMeal({ type: $('manual-type').value, name, calories, protein, source: 'manual', dateKey });
+    addMeal({ type: $('manual-type').value, name, calories, protein, source: key.startsWith('personal:') ? 'manual-personal-db' : 'manual', dateKey });
     $('manual-food').value = ''; $('manual-name').value = ''; $('manual-grams').value = ''; $('manual-calories').value = ''; $('manual-protein').value = '';
     $('manual-custom-wrap').hidden = true; $('manual-reference').textContent = '';
     selectedDateKey = dateKey;
@@ -808,7 +894,89 @@ function setupMealEditing() {
   $('meal-edit-dialog').addEventListener('cancel', () => { editingMealId = null; });
 }
 
+function clearPersonalFoodForm() {
+  editingPersonalFoodId = null;
+  ['personal-food-name', 'personal-food-kcal100', 'personal-food-protein100', 'personal-food-package-weight', 'personal-food-units', 'personal-food-unit-name'].forEach(id => { if ($(id)) $(id).value = ''; });
+  $('save-personal-food').textContent = 'Ajouter à ma base';
+  $('cancel-personal-food-edit').hidden = true;
+  $('personal-food-form-status').textContent = '';
+}
+
+function editPersonalFood(id) {
+  const food = personalFoodById(id);
+  if (!food) return;
+  editingPersonalFoodId = id;
+  $('personal-food-name').value = food.name || '';
+  $('personal-food-kcal100').value = food.kcal100 ?? '';
+  $('personal-food-protein100').value = food.protein100 ?? '';
+  $('personal-food-package-weight').value = food.packageWeightG || '';
+  $('personal-food-units').value = food.units || '';
+  $('personal-food-unit-name').value = food.unitName || '';
+  $('save-personal-food').textContent = 'Enregistrer la modification';
+  $('cancel-personal-food-edit').hidden = false;
+  $('personal-food-form-status').textContent = `Modification de « ${food.name} ».`;
+  $('personal-food-name').focus();
+}
+
+function savePersonalFoodReference() {
+  const name = $('personal-food-name').value.trim();
+  const kcal100 = Number(String($('personal-food-kcal100').value).replace(',', '.'));
+  const protein100 = Number(String($('personal-food-protein100').value).replace(',', '.'));
+  const packageWeightG = Number(String($('personal-food-package-weight').value || '').replace(',', '.')) || null;
+  const units = Number(String($('personal-food-units').value || '').replace(',', '.')) || null;
+  const unitName = $('personal-food-unit-name').value.trim();
+  if (!name) return alert('Indiquez le nom du produit ou de l’aliment.');
+  if (!Number.isFinite(kcal100) || kcal100 < 0) return alert('Indiquez les kcal pour 100 g.');
+  if (!Number.isFinite(protein100) || protein100 < 0) return alert('Indiquez les protéines pour 100 g.');
+  if (packageWeightG !== null && packageWeightG <= 0) return alert('Le poids du paquet doit être supérieur à 0.');
+  if (units !== null && units <= 0) return alert('Le nombre d’unités doit être supérieur à 0.');
+
+  state.personalFoods = Array.isArray(state.personalFoods) ? state.personalFoods : [];
+  const duplicate = state.personalFoods.find(food => normalizeFoodName(food.name) === normalizeFoodName(name) && food.id !== editingPersonalFoodId);
+  if (duplicate && !confirm(`Une référence « ${duplicate.name} » existe déjà. Ajouter quand même une nouvelle référence ?`)) return;
+
+  const now = new Date().toISOString();
+  if (editingPersonalFoodId) {
+    const index = state.personalFoods.findIndex(food => food.id === editingPersonalFoodId);
+    if (index >= 0) state.personalFoods[index] = { ...state.personalFoods[index], name, kcal100, protein100, packageWeightG, units, unitName, updatedAt: now };
+  } else {
+    state.personalFoods.push({ id: makeId(), name, kcal100, protein100, packageWeightG, units, unitName, createdAt: now, updatedAt: now, origin: 'label-user' });
+  }
+  saveState();
+  clearPersonalFoodForm();
+  renderLocalFoodDb();
+  populateManualFoodSelect();
+}
+
+function deletePersonalFood(id) {
+  const food = personalFoodById(id);
+  if (!food) return;
+  if (!confirm(`Supprimer « ${food.name} » de votre base personnelle ?\n\nLes repas déjà enregistrés ne seront pas modifiés.`)) return;
+  state.personalFoods = state.personalFoods.filter(item => item.id !== id);
+  saveState();
+  if (editingPersonalFoodId === id) clearPersonalFoodForm();
+  renderLocalFoodDb();
+  populateManualFoodSelect();
+}
+
 function renderLocalFoodDb() {
+  const personalEl = $('personal-food-list');
+  if (personalEl) {
+    const foods = [...(state.personalFoods || [])].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    personalEl.innerHTML = foods.length ? foods.map(food => `
+      <div class="personal-food-row">
+        <div class="personal-food-main">
+          <strong>${escapeHtml(food.name)}</strong>
+          <span>${round(food.kcal100, 1)} kcal · ${round(food.protein100, 1)} g prot. / 100 g</span>
+          ${personalFoodMeta(food) ? `<small>${escapeHtml(personalFoodMeta(food))}</small>` : ''}
+        </div>
+        <div class="personal-food-actions">
+          <button type="button" data-edit-personal-food="${food.id}">Modifier</button>
+          <button type="button" class="danger-link" data-delete-personal-food="${food.id}">Supprimer</button>
+        </div>
+      </div>`).join('') : '<div class="empty-state">Aucune référence personnelle. Ajoutez directement les valeurs indiquées sur vos emballages.</div>';
+  }
+
   const el = $('food-db-list');
   if (!el) return;
   const foods = Object.values(FOOD_DB).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
@@ -818,6 +986,17 @@ function renderLocalFoodDb() {
       <strong>${round(food.kcal100, 1)}</strong>
       <strong>${round(food.protein100, 1)} g</strong>
     </div>`).join('');
+}
+
+function setupPersonalFoodDb() {
+  $('save-personal-food').addEventListener('click', savePersonalFoodReference);
+  $('cancel-personal-food-edit').addEventListener('click', clearPersonalFoodForm);
+  $('personal-food-list').addEventListener('click', event => {
+    const edit = event.target.closest('[data-edit-personal-food]');
+    if (edit) return editPersonalFood(edit.dataset.editPersonalFood);
+    const del = event.target.closest('[data-delete-personal-food]');
+    if (del) return deletePersonalFood(del.dataset.deletePersonalFood);
+  });
 }
 
 function deleteWholeDay(key) {
@@ -1015,8 +1194,19 @@ function setupSettings() {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `calories-${localDateKey()}.json`; a.click(); URL.revokeObjectURL(a.href);
   });
+  $('clear-journal-data').addEventListener('click', () => {
+    if (!confirm('Effacer les repas, activités et pesées enregistrés ?\n\nLe profil, les réglages et votre base alimentaire personnelle seront conservés.')) return;
+    state.meals = [];
+    state.activities = [];
+    state.weights = [];
+    state.profile.currentWeightKg = Number(state.profile.startWeightKg || state.profile.currentWeightKg || 74);
+    saveState();
+    selectedDateKey = localDateKey();
+    updateToday(); renderHistory(); renderWeight(); fillSettings();
+    alert('Journal effacé. Votre base alimentaire personnelle est conservée.');
+  });
   $('reset-data').addEventListener('click', () => {
-    if (!confirm('Effacer définitivement toutes les données enregistrées sur cet appareil ?')) return;
+    if (!confirm('Réinitialiser complètement l’application ?\n\nCette action effacera aussi votre base alimentaire personnelle, votre profil et vos réglages.')) return;
     localStorage.removeItem(STORAGE_KEY); state = structuredClone(defaultState); location.reload();
   });
 }
@@ -1026,7 +1216,7 @@ function registerServiceWorker() {
 }
 
 function init() {
-  setupNavigation(); setupFirstRun(); setupPhoto(); setupManualEntry(); setupActivity(); setupDeletion(); setupMealEditing(); setupWeight(); setupSettings();
+  setupNavigation(); setupFirstRun(); setupPhoto(); setupManualEntry(); setupActivity(); setupDeletion(); setupMealEditing(); setupWeight(); setupSettings(); setupPersonalFoodDb();
   setEntryDates(selectedDateKey); updateToday(); fillSettings(); renderLocalFoodDb(); registerServiceWorker();
   window.addEventListener('resize', () => { if ($('view-weight').classList.contains('active')) renderWeight(); });
 }

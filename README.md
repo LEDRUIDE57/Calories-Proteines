@@ -1,41 +1,56 @@
-# Calories V1
+# Calories V1.7
 
-PWA mobile/tablette de suivi des calories, protéines et du poids.
+PWA mobile/tablette de suivi des calories, protéines, activité et poids avec analyse photo assistée par IA.
 
-## Fonctionnalités V1
+## Nouveauté V1.7 — base alimentaire personnelle
 
-- Profil initial : 73 ans, 74 kg, objectif 72,5 kg.
-- Calcul du besoin calorique par Mifflin-St Jeor + facteur d'activité.
-- Déficit par défaut : 225 kcal/jour, modifiable.
-- Objectif protéines configurable en g/kg/jour (1,0 par défaut).
-- Photo depuis l'appareil photo ou la galerie.
-- Analyse photo IA : aliments, portions estimées, kcal, protéines.
-- Ajout manuel rapide.
-- Cumul journalier calories + protéines.
-- Comparaison à l'objectif et au besoin de maintien.
-- Historique des repas.
-- Suivi du poids avec courbe simple.
-- Données enregistrées localement sur l'appareil.
-- Installation PWA sur Android/Samsung.
+La V1.7 permet d'ajouter directement des références alimentaires à partir des valeurs inscrites sur les emballages.
 
-## Important : GitHub Pages ou Vercel ?
+Dans **Réglages → Base alimentaire locale**, l'utilisateur peut enregistrer :
 
-GitHub Pages peut héberger l'interface mais ne peut pas conserver une clé API secrète. L'analyse automatique des photos nécessite donc un petit backend.
+- nom du produit / aliment ;
+- kcal pour 100 g ;
+- protéines pour 100 g ;
+- poids total du paquet (facultatif) ;
+- nombre d'unités / portions (facultatif) ;
+- nom de l'unité : rond, tranche, pot, etc. (facultatif).
 
-La solution la plus simple pour obtenir la V1 complète est de déployer ce même dépôt sur **Vercel** et d'y ajouter la variable d'environnement `OPENAI_API_KEY`.
+Si poids total + nombre d'unités sont renseignés, l'application affiche automatiquement le poids approximatif d'une unité.
 
-L'interface et l'API `/api/analyze` fonctionneront alors sur la même adresse.
+### Ordre de priorité nutritionnel
 
-Si vous souhaitez garder l'interface sur GitHub Pages, vous pouvez déployer uniquement le backend sur Vercel puis renseigner son adresse complète dans **Réglages > Adresse API d'analyse**.
+Lorsqu'un nom d'aliment est corrigé après une analyse photo :
 
-## Test sans IA
+1. **Base personnelle de l'utilisateur** ;
+2. **Base générale intégrée** ;
+3. **Luna**, seulement si aucune référence locale ne correspond.
 
-Même sans backend, l'application est utilisable : profil, objectifs, saisie manuelle, calories, protéines, historique et poids fonctionnent immédiatement.
+La base personnelle apparaît également en premier dans le menu d'ajout manuel. Cela permet de limiter les appels API et d'utiliser les valeurs exactes de l'étiquette pour les produits habituels.
 
-## Données et photos
+Les références personnelles peuvent être modifiées ou supprimées. La suppression d'une référence ne modifie jamais les repas déjà enregistrés.
 
-Les données de suivi sont stockées dans `localStorage` sur l'appareil. La photo sert à l'analyse mais n'est pas conservée dans l'historique V1, afin d'éviter de saturer le stockage du navigateur.
+## Compatibilité
 
-## Note
+La même clé de stockage local (`caloriesV1State`) est conservée. Les données V1.6 existantes sont donc préservées lors de la mise à jour.
 
-Les calories et protéines déduites d'une photo restent des estimations. Les huiles, sauces, ingrédients cachés et portions sont particulièrement difficiles à évaluer visuellement.
+## Déploiement
+
+L'API serveur n'est pas modifiée par rapport à la V1.5/V1.6. Pour la mise à jour GitHub, remplacer seulement :
+
+- `index.html`
+- `app.js`
+- `styles.css`
+- `service-worker.js`
+
+Le dossier `api`, la clé OpenAI et les réglages Vercel restent inchangés.
+
+## Remise à zéro avant un test réel
+
+La rubrique **Réglages → Données** distingue désormais :
+
+- **Effacer les saisies de test** : supprime repas, activités et pesées, mais conserve le profil, les réglages et la base alimentaire personnelle ;
+- **Réinitialiser complètement l'application** : efface aussi la base personnelle et le profil.
+
+Pour repartir avec un journal vide tout en gardant les références d'étiquettes déjà saisies, utiliser **Effacer les saisies de test**.
+
+Lors de la correction du nom d'un aliment après analyse photo, les noms de la base personnelle et de la base générale sont proposés comme suggestions. Choisir une référence personnelle existante évite un appel de recalcul texte à Luna.

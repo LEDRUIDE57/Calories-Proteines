@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.6</div>
+    <div class="version">V1.7</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -325,8 +325,9 @@
       </div>
       <div class="help-list">
         <details open><summary>Analyser un repas par photo</summary><p>Choisissez une photo ou prenez-la avec la tablette. Luna identifie les aliments et propose des quantités, calories et protéines. Le résultat reste une estimation visuelle.</p></details>
-        <details><summary>Corriger une estimation</summary><p>Si le nom reconnu est faux, corrigez-le : Calories recalcule alors une nouvelle référence kcal/protéines pour cet aliment, sans conserver celle de l’aliment initial. Pour un aliment simple connu, la base locale est utilisée ; sinon un recalcul texte par Luna est lancé. Ensuite, une modification des grammes recalcule proportionnellement les valeurs. Le repas ne peut pas être validé tant qu’un recalcul demandé a échoué.</p></details>
-        <details><summary>Ajouter manuellement</summary><p>Choisissez un aliment dans le menu, indiquez la quantité puis validez. Pour un aliment absent, utilisez « Autre aliment » et saisissez vos propres valeurs.</p></details>
+        <details><summary>Corriger une estimation</summary><p>Si le nom reconnu est faux, corrigez-le : Calories recalcule alors une nouvelle référence kcal/protéines pour cet aliment, sans conserver celle de l’aliment initial. L’application cherche d’abord dans votre base personnelle, puis dans la base générale. Luna n’est appelé pour un recalcul texte que si aucune référence locale ne correspond. Ensuite, une modification des grammes recalcule proportionnellement les valeurs. Le repas ne peut pas être validé tant qu’un recalcul demandé a échoué.</p></details>
+        <details><summary>Ajouter manuellement</summary><p>Le menu propose d’abord les références de votre base personnelle, puis la base générale. Indiquez la quantité et les calories/protéines sont calculées à partir des valeurs pour 100 g. Pour un aliment ponctuel absent, utilisez « Autre aliment ».</p></details>
+        <details><summary>Ajouter un produit à ma base locale</summary><p>Dans Réglages → Base alimentaire locale, saisissez le nom du produit ainsi que les kcal et protéines indiquées sur l’étiquette pour 100 g. Vous pouvez aussi noter le poids du paquet, le nombre d’unités et leur nom (rond, tranche, pot…). Lors d’une correction photo ou d’une saisie manuelle, votre base personnelle est consultée avant Luna.</p></details>
         <details><summary>Calories et protéines</summary><p>Les calories des repas s’additionnent. Les calories dépensées par une activité sont déduites du bilan calorique net. Les protéines consommées s’additionnent et ne sont jamais déduites par le sport.</p></details>
         <details><summary>Ajouter une activité</summary><p>Choisissez l’activité, puis sa source dans le menu proposé. La source habituelle peut être définie dans Réglages (par exemple Vélo → eFlow, Marche → Samsung Health, Vélo appart → David Douillet). Saisissez ensuite les kcal fournies par cette application ou cet appareil : Calories ne les ré-estime pas.</p></details>
         <details><summary>Comprendre le bilan net</summary><p>Bilan net = calories alimentaires − calories d’activité. Le graphe est vert jusqu’à l’objectif et rouge uniquement pour la partie qui dépasse l’objectif.</p></details>
@@ -397,9 +398,44 @@
 
       <div class="panel">
         <h3>Base alimentaire locale</h3>
-        <p class="muted small">Cette petite base est utilisée pour recalculer immédiatement les aliments simples connus, sans appel à Luna. Les valeurs sont indiquées pour 100 g.</p>
+        <p class="muted small">Ajoutez ici vos produits connus à partir de l’étiquette nutritionnelle. Votre base personnelle est consultée <strong>avant</strong> la base générale et avant tout appel à Luna.</p>
+
+        <div class="personal-food-form">
+          <h4>Ajouter une référence personnelle</h4>
+          <div class="form-grid">
+            <label>Nom du produit / aliment
+              <input id="personal-food-name" type="text" placeholder="Ex. Chèvre chaud en rond" />
+            </label>
+            <label>kcal / 100 g
+              <input id="personal-food-kcal100" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 295" />
+            </label>
+            <label>Protéines / 100 g
+              <input id="personal-food-protein100" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 18,5" />
+            </label>
+            <label>Poids total du paquet (g) — facultatif
+              <input id="personal-food-package-weight" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 160" />
+            </label>
+            <label>Nombre d’unités / portions — facultatif
+              <input id="personal-food-units" type="number" inputmode="decimal" min="0" step="1" placeholder="Ex. 4" />
+            </label>
+            <label>Nom de l’unité — facultatif
+              <input id="personal-food-unit-name" type="text" placeholder="Ex. rond, tranche, pot" />
+            </label>
+          </div>
+          <p id="personal-food-form-status" class="muted small"></p>
+          <div class="personal-food-form-actions">
+            <button id="cancel-personal-food-edit" type="button" class="button secondary" hidden>Annuler</button>
+            <button id="save-personal-food" type="button" class="button primary">Ajouter à ma base</button>
+          </div>
+        </div>
+
+        <div class="personal-food-section">
+          <h4>Ma base personnelle</h4>
+          <div id="personal-food-list" class="personal-food-list"></div>
+        </div>
+
         <details class="food-db-details">
-          <summary>Voir le contenu de la base locale</summary>
+          <summary>Voir la base générale intégrée</summary>
           <div id="food-db-list" class="food-db-list"></div>
         </details>
       </div>
@@ -415,9 +451,11 @@
 
       <div class="panel danger-zone">
         <h3>Données</h3>
-        <p class="muted small">Les repas, activités, objectifs et poids sont enregistrés uniquement dans le navigateur de cet appareil.</p>
+        <p class="muted small">Les repas, activités, objectifs, poids et votre base personnelle sont enregistrés uniquement dans le navigateur de cet appareil.</p>
         <button id="export-data" class="button secondary full">Exporter mes données JSON</button>
-        <button id="reset-data" class="button danger full">Effacer toutes les données</button>
+        <button id="clear-journal-data" class="button secondary full">Effacer les saisies de test</button>
+        <p class="muted small">« Effacer les saisies de test » supprime repas, activités et pesées mais conserve le profil, les réglages et votre base alimentaire personnelle.</p>
+        <button id="reset-data" class="button danger full">Réinitialiser complètement l’application</button>
       </div>
     </section>
   </main>
@@ -457,6 +495,8 @@
       </div>
     </div>
   </dialog>
+
+  <datalist id="food-name-suggestions"></datalist>
 
   <dialog id="setup-dialog">
     <form method="dialog" id="setup-form" class="dialog-card">
