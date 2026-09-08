@@ -84,3 +84,44 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
   .energy-summary{grid-template-columns:1fr 1fr 1fr;gap:5px}.energy-summary>div{padding:8px 5px}.energy-summary strong{font-size:14px}.energy-chart-area{height:230px}.energy-column{width:82px}
   .portion-editor{grid-template-columns:40px minmax(90px,1fr) 40px}.net-line{flex-direction:column;gap:4px}.activity-form{grid-template-columns:1fr}
 }
+
+/* V1.3 — journées passées, suppression, aide, sources d'activité */
+.day-nav{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:-4px 0 10px}
+.selected-date-row{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:10px;align-items:end;margin-bottom:8px}
+.selected-date-row .button.danger{margin-top:0}
+.date-field{margin:12px 0 6px;max-width:280px}
+.button:disabled{opacity:.42;cursor:not-allowed}
+.activity-form{grid-template-columns:1fr 1.2fr 1fr;align-items:end}
+.activity-save{align-self:end}
+.weight-form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.weight-log-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}
+.inline-delete{grid-column:auto;padding:5px 2px}
+.history-day-header{align-items:center}
+.history-day-header>div{min-width:0}
+.history-delete-day{margin-top:0!important;white-space:nowrap}
+.history-total{margin-top:4px;text-align:left;font-size:12px;color:var(--muted)}
+.help-intro{background:var(--green-soft);border:1px solid #c9e5d5;border-radius:18px;padding:16px;margin:14px 0}
+.help-intro p{margin:6px 0 0;color:#476356}
+.help-list{display:grid;gap:10px}
+.help-list details{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.help-list summary{cursor:pointer;font-weight:800;padding:15px 17px;list-style:none}
+.help-list summary::-webkit-details-marker{display:none}
+.help-list summary::after{content:'＋';float:right;color:var(--green)}
+.help-list details[open] summary::after{content:'−'}
+.help-list details p{margin:0;padding:0 17px 16px;color:var(--muted);line-height:1.5}
+.bottom-nav{grid-template-columns:repeat(6,1fr)}
+.nav-item small{font-size:9px}
+
+@media (max-width:620px){
+  .day-nav{grid-template-columns:1fr 1fr}.day-nav #day-next{grid-column:2}.day-nav #day-today{grid-row:2;grid-column:1/-1}
+  .selected-date-row{grid-template-columns:1fr}.selected-date-row .button{width:100%}
+  .activity-form{grid-template-columns:1fr 1fr}.activity-save{grid-column:1/-1;width:100%}
+  .weight-form{grid-template-columns:1fr 1fr}.weight-form .button{grid-column:1/-1;width:100%}
+  .history-day-header{display:grid;grid-template-columns:1fr}.history-delete-day{width:100%}
+}
+@media (max-width:430px){
+  .day-nav{grid-template-columns:1fr}.day-nav #day-next,.day-nav #day-today{grid-column:1;grid-row:auto}
+  .activity-form,.weight-form{grid-template-columns:1fr}
+  .bottom-nav{padding-left:4px;padding-right:4px}.nav-item{min-width:0;padding-left:0;padding-right:0}.nav-item span{font-size:19px}.nav-item small{font-size:8px}
+  .weight-log-row{grid-template-columns:1fr auto}.weight-log-row .inline-delete{grid-column:1/-1;justify-self:end}
+}
