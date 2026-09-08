@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#1f6f4a" />
-  <meta name="description" content="Suivi quotidien des calories, protéines et du poids avec analyse photo assistée par IA." />
+  <meta name="description" content="Suivi quotidien des calories, protéines, activité et poids avec analyse photo assistée par IA." />
   <title>Calories</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icons/icon-192.png" />
@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.1</div>
+    <div class="version">V1.2</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -31,12 +31,16 @@
       </div>
 
       <div class="hero-card">
-        <div class="hero-label">Calories consommées</div>
+        <div class="hero-label">Calories alimentaires</div>
         <div class="hero-value"><span id="cal-consumed">0</span> <small>kcal</small></div>
         <div class="progress"><div id="cal-progress" class="progress-bar"></div></div>
         <div class="metric-row">
-          <span>Objectif <strong id="cal-target">—</strong></span>
+          <span>Objectif net <strong id="cal-target">—</strong></span>
           <span>Reste <strong id="cal-remaining">—</strong></span>
+        </div>
+        <div class="net-line">
+          <span>Sport <strong id="activity-deducted">−0 kcal</strong></span>
+          <span>Bilan net <strong id="net-calories">0 kcal</strong></span>
         </div>
       </div>
 
@@ -52,6 +56,65 @@
         <div class="metric-row"><span>Reste</span><strong id="protein-remaining">—</strong></div>
       </div>
 
+      <div class="panel energy-panel">
+        <div class="panel-title-row">
+          <div>
+            <h3>Bilan calorique du jour</h3>
+            <p class="muted small panel-subtitle">La colonne représente le bilan net après déduction du sport.</p>
+          </div>
+        </div>
+        <div class="energy-summary">
+          <div><span>Alimentaire</span><strong id="chart-food-calories">0 kcal</strong></div>
+          <div><span>Sport</span><strong id="chart-activity-calories">−0 kcal</strong></div>
+          <div><span>Net</span><strong id="chart-net-calories">0 kcal</strong></div>
+        </div>
+        <div class="energy-chart-wrap" aria-label="Graphique du bilan calorique">
+          <div class="energy-scale-label" id="energy-scale-max">—</div>
+          <div class="energy-chart-area">
+            <div id="energy-target-line" class="energy-target-line"><span id="energy-target-label">Objectif —</span></div>
+            <div class="energy-column" aria-hidden="true">
+              <div id="energy-green" class="energy-segment green"></div>
+              <div id="energy-red" class="energy-segment red"></div>
+            </div>
+          </div>
+          <div class="energy-zero">0</div>
+        </div>
+        <div class="energy-legend">
+          <span><i class="legend-dot green"></i> Dans l’objectif</span>
+          <span><i class="legend-dot red"></i> Dépassement</span>
+        </div>
+      </div>
+
+      <div class="panel activity-panel">
+        <div class="panel-title-row">
+          <div>
+            <h3>Déduire une activité</h3>
+            <p class="muted small panel-subtitle">Ex. vélo, marche ou autre dépense sportive.</p>
+          </div>
+        </div>
+        <div class="activity-form">
+          <label>Activité
+            <select id="activity-type">
+              <option>Vélo</option>
+              <option>Marche</option>
+              <option>Randonnée</option>
+              <option>Natation</option>
+              <option>Jardinage</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </label>
+          <label id="activity-custom-wrap" hidden>Nom de l’activité
+            <input id="activity-custom-name" type="text" placeholder="Ex. rameur" />
+          </label>
+          <label>Calories dépensées
+            <input id="activity-calories" type="number" inputmode="numeric" min="1" step="1" placeholder="kcal" />
+          </label>
+          <button id="save-activity" class="button secondary activity-save">Déduire</button>
+        </div>
+        <p class="muted small activity-note">Saisissez de préférence les kcal données par votre montre, compteur ou appareil. Les protéines ne sont pas diminuées.</p>
+        <div id="today-activities" class="activity-list empty-state">Aucune activité déduite aujourd’hui.</div>
+      </div>
+
       <div class="grid-two">
         <div class="stat-card">
           <span class="stat-label">Besoin maintien</span>
@@ -59,7 +122,7 @@
           <span class="stat-unit">kcal/j</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Écart maintien</span>
+          <span class="stat-label">Écart maintien net</span>
           <strong id="maintenance-gap">—</strong>
           <span class="stat-unit">kcal</span>
         </div>
@@ -99,12 +162,15 @@
 
       <div id="analysis-panel" class="panel" hidden>
         <div class="panel-title-row">
-          <h3>Estimation</h3>
+          <div>
+            <h3>Estimation à corriger</h3>
+            <p class="muted small panel-subtitle">Ajustez les quantités proposées avant d’ajouter le repas.</p>
+          </div>
           <span id="analysis-confidence" class="pill neutral"></span>
         </div>
         <div id="analysis-items"></div>
         <div class="analysis-total">
-          <span>Total estimé</span>
+          <span>Total recalculé</span>
           <strong><span id="analysis-calories">0</span> kcal · <span id="analysis-protein">0</span> g protéines</strong>
         </div>
         <p id="analysis-note" class="muted small"></p>
@@ -134,8 +200,35 @@
               <option>Autre</option>
             </select>
           </label>
-          <label>Nom
-            <input id="manual-name" type="text" placeholder="Ex. yaourt nature" />
+          <label>Aliment
+            <select id="manual-food">
+              <option value="">Choisir un aliment…</option>
+              <option value="chicken">Poulet cuit</option>
+              <option value="steak">Steak haché</option>
+              <option value="egg">Œuf</option>
+              <option value="ham">Jambon blanc</option>
+              <option value="salmon">Saumon cuit</option>
+              <option value="tuna">Thon au naturel</option>
+              <option value="potato">Pommes de terre cuites</option>
+              <option value="fries">Frites</option>
+              <option value="rice">Riz cuit</option>
+              <option value="pasta">Pâtes cuites</option>
+              <option value="bread">Pain</option>
+              <option value="yogurt">Yaourt nature</option>
+              <option value="cheese">Fromage type emmental</option>
+              <option value="banana">Banane</option>
+              <option value="apple">Pomme</option>
+              <option value="salad">Salade verte</option>
+              <option value="carrot">Carottes</option>
+              <option value="watermelon">Pastèque</option>
+              <option value="custom">Autre aliment…</option>
+            </select>
+          </label>
+          <label id="manual-custom-wrap" hidden>Nom de l’aliment
+            <input id="manual-name" type="text" placeholder="Ex. quiche maison" />
+          </label>
+          <label>Quantité (g)
+            <input id="manual-grams" type="number" inputmode="numeric" min="1" step="5" placeholder="100" />
           </label>
           <label>Calories
             <input id="manual-calories" type="number" inputmode="numeric" min="0" placeholder="kcal" />
@@ -144,6 +237,7 @@
             <input id="manual-protein" type="number" inputmode="decimal" min="0" step="0.1" placeholder="g" />
           </label>
         </div>
+        <p id="manual-reference" class="muted small"></p>
         <button id="save-manual" class="button secondary full">Ajouter</button>
       </div>
     </section>
@@ -202,7 +296,7 @@
           <label>Objectif poids (kg)
             <input id="set-goal-weight" type="number" min="30" max="250" step="0.1" />
           </label>
-          <label>Activité
+          <label>Activité habituelle
             <select id="set-activity">
               <option value="1.2">Faible</option>
               <option value="1.375">Modérée</option>
@@ -222,7 +316,7 @@
 
       <div class="panel">
         <h3>Analyse photo IA</h3>
-        <p class="muted small">Sur Vercel, laissez ce champ vide. Si l’application est publiée sur GitHub Pages, indiquez l’adresse complète du service d’analyse sécurisé.</p>
+        <p class="muted small">Sur Vercel, laissez ce champ vide. Si l’application est publiée ailleurs, indiquez l’adresse complète du service d’analyse sécurisé.</p>
         <label>Adresse API d’analyse (optionnel)
           <input id="set-api-url" type="url" placeholder="https://mon-service.vercel.app/api/analyze" />
         </label>
@@ -231,7 +325,7 @@
 
       <div class="panel danger-zone">
         <h3>Données</h3>
-        <p class="muted small">Les repas, objectifs et poids sont enregistrés uniquement dans le navigateur de cet appareil.</p>
+        <p class="muted small">Les repas, activités, objectifs et poids sont enregistrés uniquement dans le navigateur de cet appareil.</p>
         <button id="export-data" class="button secondary full">Exporter mes données JSON</button>
         <button id="reset-data" class="button danger full">Effacer toutes les données</button>
       </div>
