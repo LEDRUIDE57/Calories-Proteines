@@ -58,6 +58,7 @@ let state = loadState();
 let selectedImageData = null;
 let currentAnalysis = null;
 let selectedDateKey = localDateKey();
+let editingMealId = null;
 
 const $ = id => document.getElementById(id);
 const round = (n, d = 0) => Number(Number(n).toFixed(d));
@@ -250,7 +251,10 @@ function updateToday() {
         <div class="meal-meta">${new Date(meal.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
       </div>
       <div class="meal-nutrition">${Math.round(meal.calories)} kcal<br><span class="muted">${round(meal.protein, 1)} g prot.</span></div>
-      <button class="meal-delete" data-delete-meal="${meal.id}">Supprimer</button>
+      <div class="meal-actions">
+        <button class="meal-edit" data-edit-meal="${meal.id}">Modifier</button>
+        <button class="meal-delete" data-delete-meal="${meal.id}">Supprimer</button>
+      </div>
     </div>`).join('') : 'Aucun repas enregistré.';
 
   $('today-activities').className = activities.length ? 'activity-list' : 'activity-list empty-state';
@@ -762,6 +766,60 @@ function refreshCurrentWeightFromLog() {
   state.profile.currentWeightKg = Number(latest.kg);
 }
 
+function timestampWithDateKey(existingTimestamp, dateKey) {
+  const base = dateFromKey(dateKey);
+  const previous = existingTimestamp ? new Date(existingTimestamp) : new Date();
+  base.setHours(previous.getHours(), previous.getMinutes(), previous.getSeconds(), previous.getMilliseconds());
+  return base.toISOString();
+}
+
+function openMealEditor(mealId) {
+  const meal = state.meals.find(m => m.id === mealId);
+  if (!meal) return;
+  editingMealId = mealId;
+  $('meal-edit-name').textContent = meal.name || 'Repas';
+  $('meal-edit-type').value = meal.type || 'Autre';
+  $('meal-edit-date').value = meal.dateKey || localDateKey(new Date(meal.timestamp));
+  $('meal-edit-date').max = localDateKey();
+  $('meal-edit-dialog').showModal();
+}
+
+function saveMealEditor() {
+  const meal = state.meals.find(m => m.id === editingMealId);
+  if (!meal) { $('meal-edit-dialog').close(); editingMealId = null; return; }
+  const newType = $('meal-edit-type').value;
+  const newDateKey = $('meal-edit-date').value || meal.dateKey || selectedDateKey;
+  if (newDateKey > localDateKey()) return alert('La date du repas ne peut pas être dans le futur.');
+  meal.type = newType;
+  if (newDateKey !== meal.dateKey) {
+    meal.dateKey = newDateKey;
+    meal.timestamp = timestampWithDateKey(meal.timestamp, newDateKey);
+  }
+  saveState();
+  $('meal-edit-dialog').close();
+  editingMealId = null;
+  updateToday();
+  renderHistory();
+}
+
+function setupMealEditing() {
+  $('meal-edit-cancel').addEventListener('click', () => { editingMealId = null; $('meal-edit-dialog').close(); });
+  $('meal-edit-save').addEventListener('click', saveMealEditor);
+  $('meal-edit-dialog').addEventListener('cancel', () => { editingMealId = null; });
+}
+
+function renderLocalFoodDb() {
+  const el = $('food-db-list');
+  if (!el) return;
+  const foods = Object.values(FOOD_DB).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  el.innerHTML = `<div class="food-db-head"><span>Aliment</span><span>kcal/100 g</span><span>Prot./100 g</span></div>` + foods.map(food => `
+    <div class="food-db-row">
+      <span>${escapeHtml(food.name)}</span>
+      <strong>${round(food.kcal100, 1)}</strong>
+      <strong>${round(food.protein100, 1)} g</strong>
+    </div>`).join('');
+}
+
 function deleteWholeDay(key) {
   if (!confirm(`Supprimer toutes les données du ${formatShortDateKey(key)} ?\n\nRepas, activités et pesées de cette date seront supprimés.`)) return;
   state.meals = state.meals.filter(m => m.dateKey !== key);
@@ -778,6 +836,8 @@ function deleteWholeDay(key) {
 function setupDeletion() {
   $('delete-day').addEventListener('click', () => deleteWholeDay(selectedDateKey));
   document.body.addEventListener('click', event => {
+    const editMealId = event.target?.dataset?.editMeal;
+    if (editMealId) { openMealEditor(editMealId); return; }
     const mealId = event.target?.dataset?.deleteMeal;
     if (mealId) {
       if (!confirm('Supprimer ce repas ?')) return;
@@ -849,7 +909,7 @@ function renderHistory() {
         <button class="button danger compact history-delete-day" data-delete-day="${key}">Supprimer la journée</button>
       </div>
       <div class="history-day-body">
-        ${meals.map(m => `<div class="meal-item"><div><div class="meal-name">${escapeHtml(m.type)} · ${escapeHtml(m.name)}</div></div><div class="meal-nutrition">${Math.round(m.calories)} kcal<br><span class="muted">${round(m.protein, 1)} g prot.</span></div><button class="meal-delete" data-delete-meal="${m.id}">Supprimer</button></div>`).join('')}
+        ${meals.map(m => `<div class="meal-item"><div><div class="meal-name">${escapeHtml(m.type)} · ${escapeHtml(m.name)}</div></div><div class="meal-nutrition">${Math.round(m.calories)} kcal<br><span class="muted">${round(m.protein, 1)} g prot.</span></div><div class="meal-actions"><button class="meal-edit" data-edit-meal="${m.id}">Modifier</button><button class="meal-delete" data-delete-meal="${m.id}">Supprimer</button></div></div>`).join('')}
         ${activities.map(a => `<div class="activity-item history-activity"><div><div class="meal-name">Sport · ${escapeHtml(a.name)}</div><div class="meal-meta">${a.source ? `Source : ${escapeHtml(a.source)}` : ''}</div></div><div class="activity-kcal">−${Math.round(a.calories)} kcal</div><button class="meal-delete" data-delete-activity="${a.id}">Supprimer</button></div>`).join('')}
         ${weights.map(w => `<div class="weight-log-row"><span>Poids</span><strong>${Number(w.kg).toFixed(1)} kg</strong><button class="meal-delete inline-delete" data-delete-weight="${w.id}">Supprimer</button></div>`).join('')}
       </div>
@@ -966,8 +1026,8 @@ function registerServiceWorker() {
 }
 
 function init() {
-  setupNavigation(); setupFirstRun(); setupPhoto(); setupManualEntry(); setupActivity(); setupDeletion(); setupWeight(); setupSettings();
-  setEntryDates(selectedDateKey); updateToday(); fillSettings(); registerServiceWorker();
+  setupNavigation(); setupFirstRun(); setupPhoto(); setupManualEntry(); setupActivity(); setupDeletion(); setupMealEditing(); setupWeight(); setupSettings();
+  setEntryDates(selectedDateKey); updateToday(); fillSettings(); renderLocalFoodDb(); registerServiceWorker();
   window.addEventListener('resize', () => { if ($('view-weight').classList.contains('active')) renderWeight(); });
 }
 

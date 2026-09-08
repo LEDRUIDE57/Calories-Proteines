@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.5</div>
+    <div class="version">V1.6</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -396,6 +396,15 @@
       </div>
 
       <div class="panel">
+        <h3>Base alimentaire locale</h3>
+        <p class="muted small">Cette petite base est utilisée pour recalculer immédiatement les aliments simples connus, sans appel à Luna. Les valeurs sont indiquées pour 100 g.</p>
+        <details class="food-db-details">
+          <summary>Voir le contenu de la base locale</summary>
+          <div id="food-db-list" class="food-db-list"></div>
+        </details>
+      </div>
+
+      <div class="panel">
         <h3>Analyse photo IA</h3>
         <p class="muted small">Sur Vercel, laissez ce champ vide. Si l’application est publiée ailleurs, indiquez l’adresse complète du service d’analyse sécurisé.</p>
         <label>Adresse API d’analyse (optionnel)
@@ -421,6 +430,33 @@
     <button class="nav-item" data-view="help"><span>?</span><small>Aide</small></button>
     <button class="nav-item" data-view="settings"><span>⚙</span><small>Réglages</small></button>
   </nav>
+
+  <dialog id="meal-edit-dialog">
+    <div class="dialog-card">
+      <div class="eyebrow">REPAS ENREGISTRÉ</div>
+      <h2>Modifier le repas</h2>
+      <p id="meal-edit-name" class="muted"></p>
+      <div class="form-grid single-column">
+        <label>Type de repas
+          <select id="meal-edit-type">
+            <option>Petit-déjeuner</option>
+            <option>Déjeuner</option>
+            <option>Dîner</option>
+            <option>Collation</option>
+            <option>Autre</option>
+          </select>
+        </label>
+        <label>Date
+          <input id="meal-edit-date" type="date" />
+        </label>
+      </div>
+      <p class="muted small">Cette correction reclasse uniquement le repas. Elle ne relance pas Luna et ne modifie ni les aliments, ni les calories, ni les protéines.</p>
+      <div class="dialog-actions">
+        <button id="meal-edit-cancel" type="button" class="button secondary">Annuler</button>
+        <button id="meal-edit-save" type="button" class="button primary">Enregistrer</button>
+      </div>
+    </div>
+  </dialog>
 
   <dialog id="setup-dialog">
     <form method="dialog" id="setup-form" class="dialog-card">

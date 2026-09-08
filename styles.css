@@ -146,3 +146,24 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
 .nutrition-message.error{background:#fff0ef;color:#963c36;border:1px solid #f0c8c5}
 .recalc-nutrition{margin-top:8px;border:0;background:transparent;color:var(--green);padding:3px 0;font-size:11px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .recalc-nutrition:disabled{opacity:.45;cursor:wait}
+
+/* V1.6 — modification a posteriori du type/date de repas + affichage de la base locale */
+.meal-actions{grid-column:2;display:flex;gap:12px;justify-content:flex-end;align-items:center}
+.meal-actions .meal-delete,.meal-actions .meal-edit{grid-column:auto;padding:7px 0}
+.meal-edit{border:0;background:transparent;color:var(--green);font-weight:700;font-size:12px;cursor:pointer}
+.dialog-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.form-grid.single-column{grid-template-columns:1fr}
+.food-db-details{margin-top:12px}
+.food-db-details summary{cursor:pointer;font-weight:750;color:var(--green)}
+.food-db-list{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.food-db-head,.food-db-row{display:grid;grid-template-columns:minmax(0,1.5fr) .7fr .8fr;gap:8px;align-items:center;padding:10px 12px}
+.food-db-head{background:#f2f6f3;font-size:12px;color:var(--muted);font-weight:750}
+.food-db-row{border-top:1px solid var(--line);font-size:13px}
+.food-db-row span:first-child{font-weight:650}
+.food-db-row strong{text-align:right}
+@media (max-width:520px){
+  .meal-actions{gap:10px}
+  .food-db-head,.food-db-row{grid-template-columns:minmax(0,1.4fr) .7fr .8fr;padding:9px 8px;font-size:12px}
+  .dialog-actions{flex-direction:column-reverse}
+  .dialog-actions .button{width:100%}
+}
