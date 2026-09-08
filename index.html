@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f6f4a" />
+  <meta name="description" content="Suivi quotidien des calories, protéines et du poids avec analyse photo assistée par IA." />
+  <title>Calories</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">SUIVI NUTRITION</div>
+      <h1>Calories</h1>
+    </div>
+    <div class="version">V1.0</div>
+  </header>
+
+  <main id="app" class="app-shell">
+    <section id="view-today" class="view active" aria-labelledby="today-title">
+      <div class="section-title-row">
+        <div>
+          <h2 id="today-title">Aujourd’hui</h2>
+          <p id="today-date" class="muted"></p>
+        </div>
+        <button id="quick-add" class="button secondary compact">+ Ajouter</button>
+      </div>
+
+      <div class="hero-card">
+        <div class="hero-label">Calories consommées</div>
+        <div class="hero-value"><span id="cal-consumed">0</span> <small>kcal</small></div>
+        <div class="progress"><div id="cal-progress" class="progress-bar"></div></div>
+        <div class="metric-row">
+          <span>Objectif <strong id="cal-target">—</strong></span>
+          <span>Reste <strong id="cal-remaining">—</strong></span>
+        </div>
+      </div>
+
+      <div class="protein-card">
+        <div class="card-heading">
+          <div>
+            <span class="card-kicker">PROTÉINES</span>
+            <div class="protein-value"><span id="protein-consumed">0</span> g <span class="muted">/ <span id="protein-target">—</span> g</span></div>
+          </div>
+          <div id="protein-percent" class="pill">0 %</div>
+        </div>
+        <div class="progress protein"><div id="protein-progress" class="progress-bar"></div></div>
+        <div class="metric-row"><span>Reste</span><strong id="protein-remaining">—</strong></div>
+      </div>
+
+      <div class="grid-two">
+        <div class="stat-card">
+          <span class="stat-label">Besoin maintien</span>
+          <strong id="maintenance-cal">—</strong>
+          <span class="stat-unit">kcal/j</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Écart maintien</span>
+          <strong id="maintenance-gap">—</strong>
+          <span class="stat-unit">kcal</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title-row">
+          <h3>Repas du jour</h3>
+          <span id="meal-count" class="muted"></span>
+        </div>
+        <div id="today-meals" class="meal-list empty-state">Aucun repas enregistré.</div>
+      </div>
+    </section>
+
+    <section id="view-photo" class="view" aria-labelledby="photo-title">
+      <h2 id="photo-title">Photo du repas</h2>
+      <p class="muted">Prenez une photo ou choisissez-en une dans la galerie.</p>
+
+      <label class="photo-drop" for="photo-input">
+        <input id="photo-input" type="file" accept="image/*" capture="environment" hidden />
+        <div id="photo-placeholder">
+          <div class="camera-icon">📷</div>
+          <strong>Photographier mon repas</strong>
+          <span>ou choisir une photo</span>
+        </div>
+        <img id="photo-preview" alt="Aperçu du repas" hidden />
+      </label>
+
+      <button id="analyze-photo" class="button primary full" disabled>Analyser calories + protéines</button>
+      <div id="analysis-status" class="notice" hidden></div>
+
+      <div id="analysis-panel" class="panel" hidden>
+        <div class="panel-title-row">
+          <h3>Estimation</h3>
+          <span id="analysis-confidence" class="pill neutral"></span>
+        </div>
+        <div id="analysis-items"></div>
+        <div class="analysis-total">
+          <span>Total estimé</span>
+          <strong><span id="analysis-calories">0</span> kcal · <span id="analysis-protein">0</span> g protéines</strong>
+        </div>
+        <p id="analysis-note" class="muted small"></p>
+        <label>Type de repas
+          <select id="analysis-meal-type">
+            <option>Petit-déjeuner</option>
+            <option selected>Déjeuner</option>
+            <option>Dîner</option>
+            <option>Collation</option>
+            <option>Autre</option>
+          </select>
+        </label>
+        <button id="save-analysis" class="button primary full">Ajouter à ma journée</button>
+      </div>
+
+      <div class="separator"><span>ou</span></div>
+
+      <div class="panel">
+        <h3>Ajout manuel rapide</h3>
+        <div class="form-grid">
+          <label>Repas
+            <select id="manual-type">
+              <option>Petit-déjeuner</option>
+              <option selected>Déjeuner</option>
+              <option>Dîner</option>
+              <option>Collation</option>
+              <option>Autre</option>
+            </select>
+          </label>
+          <label>Nom
+            <input id="manual-name" type="text" placeholder="Ex. yaourt nature" />
+          </label>
+          <label>Calories
+            <input id="manual-calories" type="number" inputmode="numeric" min="0" placeholder="kcal" />
+          </label>
+          <label>Protéines
+            <input id="manual-protein" type="number" inputmode="decimal" min="0" step="0.1" placeholder="g" />
+          </label>
+        </div>
+        <button id="save-manual" class="button secondary full">Ajouter</button>
+      </div>
+    </section>
+
+    <section id="view-history" class="view" aria-labelledby="history-title">
+      <h2 id="history-title">Historique</h2>
+      <div id="history-summary" class="panel"></div>
+      <div id="history-list"></div>
+    </section>
+
+    <section id="view-weight" class="view" aria-labelledby="weight-title">
+      <h2 id="weight-title">Poids</h2>
+      <div class="hero-card weight-hero">
+        <div class="hero-label">Dernier poids</div>
+        <div class="hero-value"><span id="weight-current">74.0</span> <small>kg</small></div>
+        <div class="metric-row">
+          <span>Départ <strong id="weight-start">74.0 kg</strong></span>
+          <span>Objectif <strong id="weight-goal">72.5 kg</strong></span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Enregistrer un poids</h3>
+        <div class="inline-form">
+          <input id="weight-input" type="number" inputmode="decimal" min="30" max="250" step="0.1" placeholder="73,8" />
+          <button id="save-weight" class="button primary">Enregistrer</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Évolution</h3>
+        <canvas id="weight-chart" height="210"></canvas>
+        <div id="weight-empty" class="empty-state">Ajoutez au moins deux mesures pour afficher la tendance.</div>
+      </div>
+      <div id="weight-log" class="panel"></div>
+    </section>
+
+    <section id="view-settings" class="view" aria-labelledby="settings-title">
+      <h2 id="settings-title">Réglages</h2>
+      <div class="panel">
+        <h3>Profil</h3>
+        <div class="form-grid">
+          <label>Âge
+            <input id="set-age" type="number" min="18" max="120" />
+          </label>
+          <label>Sexe
+            <select id="set-sex">
+              <option value="male">Homme</option>
+              <option value="female">Femme</option>
+            </select>
+          </label>
+          <label>Taille (cm)
+            <input id="set-height" type="number" min="120" max="220" />
+          </label>
+          <label>Poids actuel (kg)
+            <input id="set-weight" type="number" min="30" max="250" step="0.1" />
+          </label>
+          <label>Objectif poids (kg)
+            <input id="set-goal-weight" type="number" min="30" max="250" step="0.1" />
+          </label>
+          <label>Activité
+            <select id="set-activity">
+              <option value="1.2">Faible</option>
+              <option value="1.375">Modérée</option>
+              <option value="1.55">Active</option>
+              <option value="1.725">Très active</option>
+            </select>
+          </label>
+          <label>Déficit cible (kcal/j)
+            <input id="set-deficit" type="number" min="0" max="750" step="25" />
+          </label>
+          <label>Protéines (g/kg/j)
+            <input id="set-protein-factor" type="number" min="0.5" max="2.5" step="0.1" />
+          </label>
+        </div>
+        <button id="save-settings" class="button primary full">Enregistrer les réglages</button>
+      </div>
+
+      <div class="panel">
+        <h3>Analyse photo IA</h3>
+        <p class="muted small">Sur Vercel, laissez ce champ vide. Si l’application est publiée sur GitHub Pages, indiquez l’adresse complète du service d’analyse sécurisé.</p>
+        <label>Adresse API d’analyse (optionnel)
+          <input id="set-api-url" type="url" placeholder="https://mon-service.vercel.app/api/analyze" />
+        </label>
+        <div id="api-mode" class="notice info"></div>
+      </div>
+
+      <div class="panel danger-zone">
+        <h3>Données</h3>
+        <p class="muted small">Les repas, objectifs et poids sont enregistrés uniquement dans le navigateur de cet appareil.</p>
+        <button id="export-data" class="button secondary full">Exporter mes données JSON</button>
+        <button id="reset-data" class="button danger full">Effacer toutes les données</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navigation principale">
+    <button class="nav-item active" data-view="today"><span>⌂</span><small>Aujourd’hui</small></button>
+    <button class="nav-item" data-view="photo"><span>📷</span><small>Photo</small></button>
+    <button class="nav-item" data-view="history"><span>▤</span><small>Historique</small></button>
+    <button class="nav-item" data-view="weight"><span>⚖</span><small>Poids</small></button>
+    <button class="nav-item" data-view="settings"><span>⚙</span><small>Réglages</small></button>
+  </nav>
+
+  <dialog id="setup-dialog">
+    <form method="dialog" id="setup-form" class="dialog-card">
+      <div class="eyebrow">PREMIER DÉMARRAGE</div>
+      <h2>Votre référence quotidienne</h2>
+      <p class="muted">Âge, poids de départ et objectif sont déjà renseignés. Il reste deux informations nécessaires au calcul du besoin calorique.</p>
+      <div class="form-grid">
+        <label>Sexe
+          <select id="setup-sex" required>
+            <option value="male">Homme</option>
+            <option value="female">Femme</option>
+          </select>
+        </label>
+        <label>Taille (cm)
+          <input id="setup-height" type="number" min="120" max="220" placeholder="175" required />
+        </label>
+        <label>Niveau d’activité
+          <select id="setup-activity" required>
+            <option value="1.2">Faible</option>
+            <option value="1.375" selected>Modérée</option>
+            <option value="1.55">Active</option>
+            <option value="1.725">Très active</option>
+          </select>
+        </label>
+      </div>
+      <div class="reference-box">
+        <strong>Prérempli</strong>
+        <span>73 ans · 74,0 kg → objectif 72,5 kg</span>
+        <span>Déficit doux : 225 kcal/j</span>
+      </div>
+      <button id="complete-setup" class="button primary full" value="default">Commencer</button>
+      <p class="footnote">Les calories et protéines sont des estimations, pas une prescription médicale.</p>
+    </form>
+  </dialog>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
