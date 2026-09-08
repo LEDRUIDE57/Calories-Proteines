@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.4</div>
+    <div class="version">V1.5</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -190,7 +190,7 @@
         <div class="panel-title-row">
           <div>
             <h3>Estimation à corriger</h3>
-            <p class="muted small panel-subtitle">Ajustez les quantités proposées avant d’ajouter le repas.</p>
+            <p class="muted small panel-subtitle">Corrigez le nom si nécessaire : calories et protéines seront recalculées pour le nouvel aliment. Ajustez ensuite la quantité.</p>
           </div>
           <span id="analysis-confidence" class="pill neutral"></span>
         </div>
@@ -325,7 +325,7 @@
       </div>
       <div class="help-list">
         <details open><summary>Analyser un repas par photo</summary><p>Choisissez une photo ou prenez-la avec la tablette. Luna identifie les aliments et propose des quantités, calories et protéines. Le résultat reste une estimation visuelle.</p></details>
-        <details><summary>Corriger une estimation</summary><p>Avant d’enregistrer, modifiez le nom d’un aliment ou sa quantité avec les boutons − / + ou en saisissant les grammes. Le total calories et protéines est recalculé immédiatement.</p></details>
+        <details><summary>Corriger une estimation</summary><p>Si le nom reconnu est faux, corrigez-le : Calories recalcule alors une nouvelle référence kcal/protéines pour cet aliment, sans conserver celle de l’aliment initial. Pour un aliment simple connu, la base locale est utilisée ; sinon un recalcul texte par Luna est lancé. Ensuite, une modification des grammes recalcule proportionnellement les valeurs. Le repas ne peut pas être validé tant qu’un recalcul demandé a échoué.</p></details>
         <details><summary>Ajouter manuellement</summary><p>Choisissez un aliment dans le menu, indiquez la quantité puis validez. Pour un aliment absent, utilisez « Autre aliment » et saisissez vos propres valeurs.</p></details>
         <details><summary>Calories et protéines</summary><p>Les calories des repas s’additionnent. Les calories dépensées par une activité sont déduites du bilan calorique net. Les protéines consommées s’additionnent et ne sont jamais déduites par le sport.</p></details>
         <details><summary>Ajouter une activité</summary><p>Choisissez l’activité, puis sa source dans le menu proposé. La source habituelle peut être définie dans Réglages (par exemple Vélo → eFlow, Marche → Samsung Health, Vélo appart → David Douillet). Saisissez ensuite les kcal fournies par cette application ou cet appareil : Calories ne les ré-estime pas.</p></details>
@@ -333,7 +333,7 @@
         <details><summary>Ajouter une journée passée</summary><p>Utilisez les boutons Jour précédent / Aujourd’hui / Jour suivant ou choisissez directement une date. Les repas, activités et pesées peuvent être enregistrés à une date passée.</p></details>
         <details><summary>Supprimer ou refaire une estimation</summary><p>Vous pouvez supprimer un repas, une activité ou une pesée. « Supprimer la journée » efface toutes les entrées de la date affichée après confirmation.</p></details>
         <details><summary>Suivre le poids</summary><p>Enregistrez une pesée avec sa date. La courbe montre la tendance vers l’objectif de poids. Une mesure isolée ne suffit pas à conclure.</p></details>
-        <details><summary>Limites de l’analyse photo</summary><p>L’identification est souvent plus fiable que la quantité. Sauces, huiles, beurre, plats mélangés et portions sans repère visuel sont plus difficiles. Corrigez les grammes lorsqu’ils vous paraissent irréalistes.</p></details>
+        <details><summary>Limites de l’analyse photo</summary><p>L’identification est souvent plus fiable que la quantité. Sauces, huiles, beurre, plats mélangés et portions sans repère visuel sont plus difficiles. Si l’aliment lui-même est mal reconnu, corrigez d’abord son nom pour refaire la référence nutritionnelle, puis ajustez les grammes.</p></details>
       </div>
       <div class="notice info">Les besoins caloriques et protéiques affichés sont des estimations et non une prescription médicale.</div>
     </section>

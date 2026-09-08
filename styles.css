@@ -136,3 +136,13 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
 .activity-history-row span{font-size:12px;color:var(--muted)}
 .activity-history-row>strong{color:var(--green);white-space:nowrap}
 @media (max-width:620px){.activity-source-settings{grid-template-columns:1fr}}
+
+/* V1.5 — recalcul nutritionnel après correction du nom */
+.analysis-flags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nutrition-chip{display:inline-flex;margin-top:7px;padding:4px 7px;border-radius:999px;background:#e8f4ff;color:#245c86;border:1px solid #bfdcf2;font-size:11px;font-weight:800}
+.nutrition-chip.local{background:#edf8f1;color:#246442;border-color:#c7e5d2}
+.nutrition-message{margin-top:7px;padding:7px 9px;border-radius:10px;background:#f4f7f5;color:#50645a;font-size:11px;line-height:1.35}
+.nutrition-message.loading{background:#eef5ff;color:#315e86}
+.nutrition-message.error{background:#fff0ef;color:#963c36;border:1px solid #f0c8c5}
+.recalc-nutrition{margin-top:8px;border:0;background:transparent;color:var(--green);padding:3px 0;font-size:11px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.recalc-nutrition:disabled{opacity:.45;cursor:wait}

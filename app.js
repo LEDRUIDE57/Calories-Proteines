@@ -359,12 +359,48 @@ function setStatus(message, type = '') {
   el.textContent = message;
 }
 
+function normalizeFoodName(value = '') {
+  return String(value)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9œæ]+/g, ' ').trim();
+}
+
+function findLocalFoodReference(name) {
+  const wanted = normalizeFoodName(name);
+  if (!wanted) return null;
+  const aliases = {
+    apple: ['pomme'], banana: ['banane'], bread: ['pain'], carrot: ['carotte', 'carottes'],
+    cheese: ['fromage type emmental', 'emmental'], chicken: ['poulet', 'poulet cuit'], egg: ['oeuf', 'œuf'],
+    fries: ['frite', 'frites'], ham: ['jambon blanc'], pasta: ['pates', 'pâtes', 'pates cuites', 'pâtes cuites'],
+    potato: ['pomme de terre', 'pommes de terre', 'pommes de terre cuites'], rice: ['riz', 'riz cuit'],
+    salad: ['salade', 'salade verte'], salmon: ['saumon', 'saumon cuit'], steak: ['steak hache', 'steak haché'],
+    tuna: ['thon', 'thon au naturel'], watermelon: ['pasteque', 'pastèque'], yogurt: ['yaourt', 'yaourt nature']
+  };
+  for (const [key, food] of Object.entries(FOOD_DB)) {
+    const candidates = [food.name, ...(aliases[key] || [])].map(normalizeFoodName);
+    if (candidates.includes(wanted)) return { ...food, key };
+  }
+  return null;
+}
+
 function prepareAnalysis(analysis) {
   const items = (Array.isArray(analysis.items) ? analysis.items : []).map(item => {
     const grams = Math.max(1, Number(item.estimated_grams || 1));
     const calories = Math.max(0, Number(item.calories || 0));
     const protein = Math.max(0, Number(item.protein_g || 0));
-    return { name: String(item.name || 'Aliment'), estimated_grams: grams, calories, protein_g: protein, kcalPerGram: calories / grams, proteinPerGram: protein / grams };
+    return {
+      name: String(item.name || 'Aliment'),
+      estimated_grams: grams,
+      calories,
+      protein_g: protein,
+      kcalPerGram: calories / grams,
+      proteinPerGram: protein / grams,
+      nutritionSource: 'photo-ai',
+      nutritionStatus: '',
+      nutritionNote: '',
+      nutritionError: false,
+      nutritionRequestId: 0
+    };
   });
   return { ...analysis, items, total_calories: items.reduce((s, i) => s + i.calories, 0), total_protein_g: items.reduce((s, i) => s + i.protein_g, 0) };
 }
@@ -379,6 +415,66 @@ function recalcAnalysisTotals() {
   currentAnalysis.total_protein_g = currentAnalysis.items.reduce((s, i) => s + Number(i.protein_g || 0), 0);
   $('analysis-calories').textContent = Math.round(currentAnalysis.total_calories);
   $('analysis-protein').textContent = round(currentAnalysis.total_protein_g, 1);
+  const pending = currentAnalysis.items.some(i => i.nutritionStatus === 'loading');
+  const invalid = currentAnalysis.items.some(i => i.nutritionError);
+  $('save-analysis').disabled = pending || invalid || !currentAnalysis.items.length;
+}
+
+function applyNutritionReference(index, kcal100, protein100, source, note = '') {
+  if (!currentAnalysis?.items?.[index]) return;
+  const item = currentAnalysis.items[index];
+  const grams = Math.max(1, Number(item.estimated_grams || 1));
+  item.kcalPerGram = Math.max(0, Number(kcal100 || 0)) / 100;
+  item.proteinPerGram = Math.max(0, Number(protein100 || 0)) / 100;
+  item.calories = item.kcalPerGram * grams;
+  item.protein_g = item.proteinPerGram * grams;
+  item.nutritionSource = source;
+  item.nutritionStatus = source === 'local-db' ? 'Recalculé avec la base alimentaire.' : 'Recalculé pour le nouvel aliment.';
+  item.nutritionNote = String(note || '');
+  item.nutritionError = false;
+}
+
+async function recalculateNutritionForName(index) {
+  if (!currentAnalysis?.items?.[index]) return;
+  const item = currentAnalysis.items[index];
+  const foodName = String(item.name || '').trim();
+  if (!foodName) return;
+  const requestId = Number(item.nutritionRequestId || 0) + 1;
+  item.nutritionRequestId = requestId;
+
+  const local = findLocalFoodReference(foodName);
+  if (local) {
+    applyNutritionReference(index, local.kcal100, local.protein100, 'local-db', `Référence locale : ${local.kcal100} kcal et ${local.protein100} g protéines / 100 g.`);
+    renderAnalysisEditor();
+    return;
+  }
+
+  item.nutritionStatus = 'loading';
+  item.nutritionNote = '';
+  item.nutritionError = false;
+  renderAnalysisEditor();
+
+  const configured = state.profile.apiUrl?.trim();
+  const endpoint = configured || '/api/analyze';
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ foodName })
+    });
+    let data = {};
+    try { data = await response.json(); } catch {}
+    if (!response.ok) throw new Error(data.error || `Erreur ${response.status}`);
+    if (!currentAnalysis?.items?.[index] || currentAnalysis.items[index].nutritionRequestId !== requestId) return;
+    applyNutritionReference(index, data.kcal_per_100g, data.protein_per_100g, 'text-ai', data.notes || 'Valeurs moyennes estimées pour 100 g.');
+  } catch (error) {
+    if (!currentAnalysis?.items?.[index] || currentAnalysis.items[index].nutritionRequestId !== requestId) return;
+    const current = currentAnalysis.items[index];
+    current.nutritionStatus = 'error';
+    current.nutritionError = true;
+    current.nutritionNote = `Recalcul impossible : ${error.message}. Corrigez le nom ou appuyez sur « Recalculer nutrition ».`;
+  }
+  renderAnalysisEditor();
 }
 
 function updateAnalysisItemFromGrams(index, grams) {
@@ -399,7 +495,14 @@ function renderAnalysisEditor() {
         <label class="analysis-name-label">Aliment
           <input class="analysis-name-input" data-analysis-name="${index}" type="text" value="${escapeHtml(item.name)}" />
         </label>
-        ${needsQuantityConfirmation(item.name) ? '<span class="confirm-chip">Quantité à confirmer</span>' : ''}
+        <div class="analysis-flags">
+          ${needsQuantityConfirmation(item.name) ? '<span class="confirm-chip">Quantité à confirmer</span>' : ''}
+          ${item.nutritionSource === 'text-ai' ? '<span class="nutrition-chip">Nutrition recalculée</span>' : ''}
+          ${item.nutritionSource === 'local-db' ? '<span class="nutrition-chip local">Base alimentaire</span>' : ''}
+        </div>
+        ${item.nutritionStatus === 'loading' ? '<div class="nutrition-message loading">Recalcul des calories et protéines…</div>' : ''}
+        ${item.nutritionNote ? `<div class="nutrition-message ${item.nutritionError ? 'error' : ''}">${escapeHtml(item.nutritionNote)}</div>` : ''}
+        <button type="button" class="recalc-nutrition" data-recalc-nutrition="${index}" ${item.nutritionStatus === 'loading' ? 'disabled' : ''}>↻ Recalculer nutrition</button>
         <div class="portion-editor">
           <button type="button" class="portion-btn" data-adjust-grams="${index}" data-delta="-10">−</button>
           <label>Quantité<div class="grams-input-wrap"><input data-analysis-grams="${index}" type="number" inputmode="numeric" min="1" step="5" value="${Math.round(item.estimated_grams)}" /><span>g</span></div></label>
@@ -445,6 +548,11 @@ function setupPhoto() {
       updateAnalysisItemFromGrams(index, current + delta);
       return;
     }
+    const recalc = event.target.closest('[data-recalc-nutrition]');
+    if (recalc) {
+      recalculateNutritionForName(Number(recalc.dataset.recalcNutrition));
+      return;
+    }
     const remove = event.target.closest('[data-remove-analysis]');
     if (remove && currentAnalysis) {
       currentAnalysis.items.splice(Number(remove.dataset.removeAnalysis), 1);
@@ -457,8 +565,13 @@ function setupPhoto() {
     if (gramsInput) return updateAnalysisItemFromGrams(Number(gramsInput.dataset.analysisGrams), Number(gramsInput.value));
     const nameInput = event.target.closest('[data-analysis-name]');
     if (nameInput && currentAnalysis?.items?.[Number(nameInput.dataset.analysisName)]) {
-      currentAnalysis.items[Number(nameInput.dataset.analysisName)].name = nameInput.value.trim() || 'Aliment';
-      renderAnalysisEditor();
+      const index = Number(nameInput.dataset.analysisName);
+      const item = currentAnalysis.items[index];
+      const nextName = nameInput.value.trim() || 'Aliment';
+      const changed = normalizeFoodName(nextName) !== normalizeFoodName(item.name);
+      item.name = nextName;
+      if (changed) recalculateNutritionForName(index);
+      else renderAnalysisEditor();
     }
   });
 
@@ -471,7 +584,7 @@ function setupPhoto() {
       name: currentAnalysis.items.map(i => i.name).slice(0, 3).join(', ') || 'Repas analysé',
       calories: currentAnalysis.total_calories,
       protein: currentAnalysis.total_protein_g,
-      items: currentAnalysis.items.map(({ kcalPerGram, proteinPerGram, ...item }) => item),
+      items: currentAnalysis.items.map(({ kcalPerGram, proteinPerGram, nutritionStatus, nutritionError, nutritionRequestId, ...item }) => item),
       source: 'photo-ai',
       dateKey
     });
