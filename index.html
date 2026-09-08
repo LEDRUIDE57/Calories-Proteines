@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.0</div>
+    <div class="version">V1.1</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -78,15 +78,21 @@
       <h2 id="photo-title">Photo du repas</h2>
       <p class="muted">Prenez une photo ou choisissez-en une dans la galerie.</p>
 
-      <label class="photo-drop" for="photo-input">
-        <input id="photo-input" type="file" accept="image/*" capture="environment" hidden />
+      <div class="photo-drop">
         <div id="photo-placeholder">
           <div class="camera-icon">📷</div>
-          <strong>Photographier mon repas</strong>
-          <span>ou choisir une photo</span>
+          <strong>Ajouter une photo du repas</strong>
+          <span>Choisissez la source ci-dessous.</span>
         </div>
         <img id="photo-preview" alt="Aperçu du repas" hidden />
-      </label>
+      </div>
+
+      <div class="photo-actions">
+        <label class="button primary photo-source" for="camera-input">📷 Prendre une photo</label>
+        <input id="camera-input" type="file" accept="image/*" capture="environment" hidden />
+        <label class="button secondary photo-source" for="gallery-input">🖼️ Choisir dans la galerie</label>
+        <input id="gallery-input" type="file" accept="image/*" hidden />
+      </div>
 
       <button id="analyze-photo" class="button primary full" disabled>Analyser calories + protéines</button>
       <div id="analysis-status" class="notice" hidden></div>

@@ -214,7 +214,7 @@ function setStatus(message, type = '') {
 }
 
 function setupPhoto() {
-  $('photo-input').addEventListener('change', async (event) => {
+  const handlePhotoSelection = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
@@ -227,8 +227,14 @@ function setupPhoto() {
       $('analysis-status').hidden = true;
     } catch {
       setStatus("Impossible de lire cette image. Essayez une autre photo.", 'error');
+    } finally {
+      // Autorise la sélection de la même image lors d'un essai suivant.
+      event.target.value = '';
     }
-  });
+  };
+
+  $('camera-input').addEventListener('change', handlePhotoSelection);
+  $('gallery-input').addEventListener('change', handlePhotoSelection);
 
   $('analyze-photo').addEventListener('click', analyzePhoto);
   $('save-analysis').addEventListener('click', () => {
