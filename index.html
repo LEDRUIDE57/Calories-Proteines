@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.3</div>
+    <div class="version">V1.4</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -126,8 +126,11 @@
           <label>Calories dépensées
             <input id="activity-calories" type="number" inputmode="numeric" min="1" step="1" placeholder="kcal" />
           </label>
-          <label>Source (facultatif)
-            <input id="activity-source" type="text" placeholder="Ex. eFlow, vélo appart" />
+          <label>Source
+            <select id="activity-source"></select>
+          </label>
+          <label id="activity-source-custom-wrap" hidden>Autre source
+            <input id="activity-source-custom" type="text" placeholder="Nom de l’application ou appareil" />
           </label>
           <button id="save-activity" class="button secondary activity-save">Déduire</button>
         </div>
@@ -271,6 +274,15 @@
     <section id="view-history" class="view" aria-labelledby="history-title">
       <h2 id="history-title">Historique</h2>
       <div id="history-summary" class="panel"></div>
+      <div class="panel">
+        <div class="panel-title-row">
+          <div>
+            <h3>Historique des activités</h3>
+            <p class="muted small panel-subtitle">Date, activité, source et kcal enregistrées.</p>
+          </div>
+        </div>
+        <div id="activity-history-list" class="activity-history-list"></div>
+      </div>
       <div id="history-list"></div>
     </section>
 
@@ -315,8 +327,8 @@
         <details open><summary>Analyser un repas par photo</summary><p>Choisissez une photo ou prenez-la avec la tablette. Luna identifie les aliments et propose des quantités, calories et protéines. Le résultat reste une estimation visuelle.</p></details>
         <details><summary>Corriger une estimation</summary><p>Avant d’enregistrer, modifiez le nom d’un aliment ou sa quantité avec les boutons − / + ou en saisissant les grammes. Le total calories et protéines est recalculé immédiatement.</p></details>
         <details><summary>Ajouter manuellement</summary><p>Choisissez un aliment dans le menu, indiquez la quantité puis validez. Pour un aliment absent, utilisez « Autre aliment » et saisissez vos propres valeurs.</p></details>
-        <details><summary>Calories et protéines</summary><p>Les calories alimentaires s’additionnent. Les protéines s’additionnent aussi et ne sont jamais soustraites par le sport.</p></details>
-        <details><summary>Ajouter une activité</summary><p>Choisissez l’activité, saisissez les kcal fournies par eFlow, le vélo d’appartement, une machine ou une autre application, puis indiquez éventuellement la source. L’application ne ré-estime pas ces kcal.</p></details>
+        <details><summary>Calories et protéines</summary><p>Les calories des repas s’additionnent. Les calories dépensées par une activité sont déduites du bilan calorique net. Les protéines consommées s’additionnent et ne sont jamais déduites par le sport.</p></details>
+        <details><summary>Ajouter une activité</summary><p>Choisissez l’activité, puis sa source dans le menu proposé. La source habituelle peut être définie dans Réglages (par exemple Vélo → eFlow, Marche → Samsung Health, Vélo appart → David Douillet). Saisissez ensuite les kcal fournies par cette application ou cet appareil : Calories ne les ré-estime pas.</p></details>
         <details><summary>Comprendre le bilan net</summary><p>Bilan net = calories alimentaires − calories d’activité. Le graphe est vert jusqu’à l’objectif et rouge uniquement pour la partie qui dépasse l’objectif.</p></details>
         <details><summary>Ajouter une journée passée</summary><p>Utilisez les boutons Jour précédent / Aujourd’hui / Jour suivant ou choisissez directement une date. Les repas, activités et pesées peuvent être enregistrés à une date passée.</p></details>
         <details><summary>Supprimer ou refaire une estimation</summary><p>Vous pouvez supprimer un repas, une activité ou une pesée. « Supprimer la journée » efface toutes les entrées de la date affichée après confirmation.</p></details>
@@ -365,6 +377,22 @@
           </label>
         </div>
         <button id="save-settings" class="button primary full">Enregistrer les réglages</button>
+      </div>
+
+      <div class="panel">
+        <h3>Sources des activités</h3>
+        <p class="muted small">Définissez l’application ou l’appareil utilisé habituellement pour chaque activité. La source sera proposée automatiquement lors de la saisie.</p>
+        <div class="activity-source-settings">
+          <label>Course<input id="source-course" type="text" placeholder="Ex. Samsung Health" /></label>
+          <label>Gym<input id="source-gym" type="text" placeholder="Source habituelle" /></label>
+          <label>Machine musculation<input id="source-machine-musculation" type="text" placeholder="Source habituelle" /></label>
+          <label>Marche<input id="source-marche" type="text" placeholder="Ex. Samsung Health" /></label>
+          <label>Natation<input id="source-natation" type="text" placeholder="Source habituelle" /></label>
+          <label>Randonnée<input id="source-randonnee" type="text" placeholder="Source habituelle" /></label>
+          <label>Vélo<input id="source-velo" type="text" placeholder="Ex. eFlow" /></label>
+          <label>Vélo appart<input id="source-velo-appart" type="text" placeholder="Ex. David Douillet" /></label>
+        </div>
+        <button id="save-activity-sources" class="button primary full">Enregistrer les sources</button>
       </div>
 
       <div class="panel">

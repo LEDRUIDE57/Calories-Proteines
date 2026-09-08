@@ -125,3 +125,14 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
   .bottom-nav{padding-left:4px;padding-right:4px}.nav-item{min-width:0;padding-left:0;padding-right:0}.nav-item span{font-size:19px}.nav-item small{font-size:8px}
   .weight-log-row{grid-template-columns:1fr auto}.weight-log-row .inline-delete{grid-column:1/-1;justify-self:end}
 }
+
+
+/* V1.4 — sources d'activité configurables et historique */
+.activity-source-settings{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.activity-history-list{display:grid;gap:0}
+.activity-history-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.activity-history-row:last-child{border-bottom:0}
+.activity-history-row>div{display:grid;gap:2px}
+.activity-history-row span{font-size:12px;color:var(--muted)}
+.activity-history-row>strong{color:var(--green);white-space:nowrap}
+@media (max-width:620px){.activity-source-settings{grid-template-columns:1fr}}

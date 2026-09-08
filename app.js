@@ -1,5 +1,18 @@
 const STORAGE_KEY = 'caloriesV1State';
 
+const ACTIVITY_TYPES = ['Course', 'Gym', 'Machine musculation', 'Marche', 'Natation', 'Randonnée', 'Vélo', 'Vélo appart'];
+const DEFAULT_ACTIVITY_SOURCES = {
+  'Course': '',
+  'Gym': '',
+  'Machine musculation': '',
+  'Marche': 'Samsung Health',
+  'Natation': '',
+  'Randonnée': '',
+  'Vélo': 'eFlow',
+  'Vélo appart': 'David Douillet'
+};
+
+
 const FOOD_DB = {
   apple: { name: 'Pomme', kcal100: 52, protein100: 0.3 },
   banana: { name: 'Banane', kcal100: 89, protein100: 1.1 },
@@ -33,7 +46,8 @@ const defaultState = {
     activityFactor: 1.375,
     deficitKcal: 225,
     proteinFactor: 1.0,
-    apiUrl: ''
+    apiUrl: '',
+    activitySources: { ...DEFAULT_ACTIVITY_SOURCES }
   },
   meals: [],
   activities: [],
@@ -88,7 +102,11 @@ function loadState() {
     return {
       ...structuredClone(defaultState),
       ...parsed,
-      profile: { ...structuredClone(defaultState.profile), ...(parsed.profile || {}) },
+      profile: {
+        ...structuredClone(defaultState.profile),
+        ...(parsed.profile || {}),
+        activitySources: { ...DEFAULT_ACTIVITY_SOURCES, ...((parsed.profile || {}).activitySources || {}) }
+      },
       meals: Array.isArray(parsed.meals) ? parsed.meals : [],
       activities: Array.isArray(parsed.activities) ? parsed.activities : [],
       weights: weights.map(w => {
@@ -530,20 +548,93 @@ function setupManualEntry() {
   });
 }
 
+function activitySourceMap() {
+  if (!state.profile.activitySources || typeof state.profile.activitySources !== 'object') {
+    state.profile.activitySources = { ...DEFAULT_ACTIVITY_SOURCES };
+  }
+  return state.profile.activitySources;
+}
+
+function allKnownActivitySources() {
+  const configured = Object.values(activitySourceMap()).map(v => String(v || '').trim()).filter(Boolean);
+  const historic = state.activities.map(a => String(a.source || '').trim()).filter(Boolean);
+  return [...new Set([...configured, ...historic])].sort((a, b) => a.localeCompare(b, 'fr'));
+}
+
+function populateActivitySourceSelect(activityName, preferredSource = '') {
+  const select = $('activity-source');
+  if (!select) return;
+  const mapping = activitySourceMap();
+  const defaultSource = String(mapping[activityName] || '').trim();
+  const sources = allKnownActivitySources();
+  select.innerHTML = '';
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = 'Source non précisée';
+  select.appendChild(none);
+  sources.forEach(source => {
+    const opt = document.createElement('option');
+    opt.value = source;
+    opt.textContent = source;
+    select.appendChild(opt);
+  });
+  const other = document.createElement('option');
+  other.value = '__other__';
+  other.textContent = 'Autre…';
+  select.appendChild(other);
+  const wanted = preferredSource || defaultSource;
+  if (wanted && !sources.includes(wanted)) {
+    const opt = document.createElement('option');
+    opt.value = wanted;
+    opt.textContent = wanted;
+    select.insertBefore(opt, other);
+  }
+  select.value = wanted || '';
+  $('activity-source-custom-wrap').hidden = select.value !== '__other__';
+}
+
+function currentActivityName() {
+  const type = $('activity-type').value;
+  return type === 'Autre' ? $('activity-custom-name').value.trim() : type;
+}
+
 function setupActivity() {
-  $('activity-type').addEventListener('change', () => { $('activity-custom-wrap').hidden = $('activity-type').value !== 'Autre'; });
+  const syncActivitySource = () => {
+    $('activity-custom-wrap').hidden = $('activity-type').value !== 'Autre';
+    const name = currentActivityName();
+    populateActivitySourceSelect(name);
+  };
+
+  $('activity-type').addEventListener('change', syncActivitySource);
+  $('activity-custom-name').addEventListener('input', () => {
+    if ($('activity-type').value === 'Autre') populateActivitySourceSelect($('activity-custom-name').value.trim());
+  });
+  $('activity-source').addEventListener('change', () => {
+    $('activity-source-custom-wrap').hidden = $('activity-source').value !== '__other__';
+    if ($('activity-source').value !== '__other__') $('activity-source-custom').value = '';
+  });
+
+  populateActivitySourceSelect('Vélo');
+
   $('save-activity').addEventListener('click', () => {
     const type = $('activity-type').value;
     const custom = $('activity-custom-name').value.trim();
     const name = type === 'Autre' ? custom : type;
     const calories = Number($('activity-calories').value);
-    const source = $('activity-source').value.trim();
+    const sourceChoice = $('activity-source').value;
+    const source = sourceChoice === '__other__' ? $('activity-source-custom').value.trim() : sourceChoice;
     const dateKey = $('activity-date').value || selectedDateKey;
     if (!name) return alert('Indiquez le nom de l’activité.');
     if (!Number.isFinite(calories) || calories <= 0) return alert('Indiquez les calories dépensées.');
+    if (sourceChoice === '__other__' && !source) return alert('Indiquez le nom de la source.');
     addActivity(name, calories, dateKey, source);
-    $('activity-calories').value = ''; $('activity-custom-name').value = ''; $('activity-source').value = '';
-    $('activity-type').value = 'Vélo'; $('activity-custom-wrap').hidden = true;
+    $('activity-calories').value = '';
+    $('activity-custom-name').value = '';
+    $('activity-source-custom').value = '';
+    $('activity-type').value = 'Vélo';
+    $('activity-custom-wrap').hidden = true;
+    $('activity-source-custom-wrap').hidden = true;
+    populateActivitySourceSelect('Vélo');
     selectedDateKey = dateKey;
     updateToday();
   });
@@ -622,6 +713,16 @@ function renderHistory() {
       <div><span class="stat-label">Moy. protéines</span><strong>${avgProtein || '—'}</strong> <span class="muted">g/j</span></div>
     </div>
     <p class="muted small">Calcul sur les jours comportant une entrée. Objectif actuel : ${targets.target || '—'} kcal nettes et ${targets.protein || '—'} g de protéines.</p>`;
+
+  const recentActivities = [...state.activities].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 30);
+  $('activity-history-list').innerHTML = recentActivities.length ? recentActivities.map(a => `
+    <div class="activity-history-row">
+      <div>
+        <strong>${escapeHtml(a.name)}</strong>
+        <span>${formatShortDateKey(a.dateKey)}${a.source ? ` · ${escapeHtml(a.source)}` : ' · source non précisée'}</span>
+      </div>
+      <strong>−${Math.round(a.calories)} kcal</strong>
+    </div>`).join('') : '<div class="empty-state">Aucune activité enregistrée.</div>';
 
   if (!keys.length) { $('history-list').innerHTML = '<div class="empty-state">Aucun historique pour le moment.</div>'; return; }
   $('history-list').innerHTML = keys.map(key => {
@@ -702,10 +803,35 @@ function fillSettings() {
   const p = state.profile;
   $('set-age').value = p.age; $('set-sex').value = p.sex; $('set-height').value = p.heightCm || ''; $('set-weight').value = p.currentWeightKg;
   $('set-goal-weight').value = p.goalWeightKg; $('set-activity').value = String(p.activityFactor); $('set-deficit').value = p.deficitKcal; $('set-protein-factor').value = p.proteinFactor; $('set-api-url').value = p.apiUrl || '';
+  const sources = activitySourceMap();
+  $('source-course').value = sources['Course'] || '';
+  $('source-gym').value = sources['Gym'] || '';
+  $('source-machine-musculation').value = sources['Machine musculation'] || '';
+  $('source-marche').value = sources['Marche'] || '';
+  $('source-natation').value = sources['Natation'] || '';
+  $('source-randonnee').value = sources['Randonnée'] || '';
+  $('source-velo').value = sources['Vélo'] || '';
+  $('source-velo-appart').value = sources['Vélo appart'] || '';
   $('api-mode').textContent = !p.apiUrl ? 'Mode actuel : /api/analyze sur le même site (Vercel).' : `Mode actuel : service externe ${p.apiUrl}`;
 }
 
 function setupSettings() {
+  $('save-activity-sources').addEventListener('click', () => {
+    state.profile.activitySources = {
+      'Course': $('source-course').value.trim(),
+      'Gym': $('source-gym').value.trim(),
+      'Machine musculation': $('source-machine-musculation').value.trim(),
+      'Marche': $('source-marche').value.trim(),
+      'Natation': $('source-natation').value.trim(),
+      'Randonnée': $('source-randonnee').value.trim(),
+      'Vélo': $('source-velo').value.trim(),
+      'Vélo appart': $('source-velo-appart').value.trim()
+    };
+    saveState();
+    populateActivitySourceSelect(currentActivityName() || 'Vélo');
+    alert('Sources des activités enregistrées.');
+  });
+
   $('save-settings').addEventListener('click', () => {
     const p = state.profile;
     p.age = Number($('set-age').value); p.sex = $('set-sex').value; p.heightCm = Number($('set-height').value); p.currentWeightKg = Number($('set-weight').value); p.goalWeightKg = Number($('set-goal-weight').value);
