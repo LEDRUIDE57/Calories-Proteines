@@ -274,3 +274,35 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
 @media (max-width:430px){
   .inline-base-grid{grid-template-columns:1fr}
 }
+\n\n/* V1.12 — modification détaillée d’un repas enregistré */
+#meal-edit-dialog.meal-detail-dialog{width:min(96vw,940px);max-width:940px;max-height:92vh;overflow:auto}
+.meal-edit-top-grid{margin-top:14px}
+.meal-edit-section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:20px 0 10px}
+.meal-edit-section-title>div{display:grid;gap:3px}.meal-edit-section-title strong{font-size:16px}.meal-edit-section-title span{font-size:12px;color:var(--muted)}
+.meal-edit-table{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.meal-edit-table-header,.meal-edit-table-row{display:grid;grid-template-columns:minmax(210px,2fr) minmax(120px,.9fr) minmax(90px,.65fr) minmax(110px,.8fr)}
+.meal-edit-table-header{background:#f2f5f2;border-bottom:1px solid var(--line);font-size:11px;font-weight:850;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+.meal-edit-table-header>div{padding:9px 10px;border-right:1px solid var(--line)}.meal-edit-table-header>div:last-child{border-right:0}
+.meal-edit-table-row{border-bottom:1px solid var(--line)}.meal-edit-table-row:last-child{border-bottom:0}
+.meal-edit-cell{min-width:0;padding:9px 10px;border-right:1px solid var(--line);display:flex;align-items:center}.meal-edit-cell:nth-child(4){border-right:0}
+.meal-edit-food-cell{display:grid;gap:6px}.meal-edit-food-select,.meal-edit-custom-name,.meal-edit-number{width:100%;min-height:42px;padding:8px 9px;border:1px solid #cfd8d2;border-radius:10px;background:#fff;color:var(--text);font:inherit;font-weight:750}
+.meal-edit-custom-name{font-weight:700}.meal-edit-number{text-align:right}
+.meal-edit-quantity{display:flex;align-items:center;gap:6px;width:100%}.meal-edit-quantity input{min-width:55px;text-align:right;font-weight:800;padding:8px 7px;min-height:42px}.meal-edit-quantity span{font-size:11px;color:var(--muted);font-weight:750;line-height:1.15;max-width:85px}
+.meal-edit-row-tools{grid-column:1/-1;display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;padding:7px 10px 9px;background:#fbfcfb;border-top:1px dashed var(--line)}
+.meal-edit-row-tools .nutrition-message{margin:0;flex:1;min-width:220px}.meal-edit-remove-item{margin-left:auto;grid-column:auto!important}
+.meal-edit-total{display:flex;justify-content:space-between;gap:14px;padding:14px 2px 10px;font-size:14px}.meal-edit-total strong{text-align:right}
+.meal-base-update-option{display:grid;grid-template-columns:auto 1fr;align-items:flex-start;gap:10px;margin:10px 0;padding:12px;border:1px solid #c9e5d5;border-radius:14px;background:#f5fbf7;cursor:pointer}
+.meal-base-update-option input{width:20px;height:20px;min-height:0;margin:2px 0 0;padding:0}.meal-base-update-option span{display:grid;gap:3px}.meal-base-update-option strong{color:var(--green)}.meal-base-update-option small{font-weight:600;color:var(--muted);line-height:1.35}
+@media (max-width:720px){
+  #meal-edit-dialog.meal-detail-dialog{width:98vw;max-height:94vh;border-radius:18px}.meal-detail-dialog .dialog-card{padding:16px 12px}
+  .meal-edit-section-title{align-items:stretch;flex-direction:column}.meal-edit-section-title .button{width:100%}
+  .meal-edit-table{border:0;background:transparent;overflow:visible}.meal-edit-table-header{display:none}
+  .meal-edit-table-row{grid-template-columns:minmax(0,1.45fr) minmax(88px,.7fr) minmax(72px,.55fr) minmax(82px,.65fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:10px;background:#fff}
+  .meal-edit-cell{position:relative;padding:23px 6px 7px}.meal-edit-cell:before{content:attr(data-label);position:absolute;top:6px;left:7px;font-size:8px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:850}
+  .meal-edit-food-select,.meal-edit-custom-name,.meal-edit-number{font-size:12px;padding:7px 5px;min-height:39px}.meal-edit-quantity input{font-size:12px;padding:7px 4px;min-height:39px}.meal-edit-quantity span{font-size:9px;max-width:60px}
+  .meal-edit-row-tools{padding:7px 8px}.meal-edit-total{font-size:13px}
+}
+@media (max-width:440px){
+  .meal-edit-table-row{grid-template-columns:minmax(0,1.35fr) minmax(78px,.72fr) minmax(62px,.55fr) minmax(70px,.62fr)}
+  .meal-edit-cell{padding-left:4px;padding-right:4px}.meal-edit-number{padding-left:3px;padding-right:3px}.meal-edit-quantity{gap:3px}.meal-edit-quantity span{max-width:48px}
+}

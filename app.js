@@ -1090,6 +1090,7 @@ let selectedImageData = null;
 let currentAnalysis = null;
 let selectedDateKey = localDateKey();
 let editingMealId = null;
+let mealEditDraft = null;
 let editingPersonalFoodId = null;
 
 const $ = id => document.getElementById(id);
@@ -2434,39 +2435,399 @@ function timestampWithDateKey(existingTimestamp, dateKey) {
   return base.toISOString();
 }
 
+function mealEditCleanNumber(value, fallback = 0) {
+  const n = Number(String(value ?? '').replace(',', '.'));
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeMealEditItem(raw = {}, index = 0) {
+  const item = structuredClone(raw || {});
+  const mode = item.quantityMode === 'unit' ? 'unit' : 'grams';
+  const min = mode === 'unit' ? 0.5 : 1;
+  let quantity = mealEditCleanNumber(item.quantity, 0);
+  if (!(quantity > 0)) quantity = mode === 'unit' ? 1 : Math.max(1, mealEditCleanNumber(item.estimated_grams, 100));
+  quantity = Math.max(min, quantity);
+  const calories = Math.max(0, mealEditCleanNumber(item.calories, 0));
+  const protein = Math.max(0, mealEditCleanNumber(item.protein_g, item.protein || 0));
+  const estimatedGrams = mealEditCleanNumber(item.estimated_grams, mode === 'grams' ? quantity : 0) || null;
+  const unit = mode === 'unit' ? String(item.quantityUnit || 'unité').trim() || 'unité' : 'g';
+  return {
+    ...item,
+    name: String(item.name || `Ingrédient ${index + 1}`).trim() || `Ingrédient ${index + 1}`,
+    quantityMode: mode,
+    quantityUnit: unit,
+    quantity,
+    estimated_grams: estimatedGrams,
+    calories,
+    protein_g: protein,
+    _editKey: makeId(),
+    _recordedRaw: structuredClone(raw || {}),
+    _referenceKey: 'recorded',
+    _customName: false,
+    _nutritionDirty: false,
+    _nameDirty: false,
+    _sourceLabel: item.nutritionSource === 'personal-db' ? 'Ma base · enregistré' : item.nutritionSource === 'local-db' ? 'Base générale · enregistré' : item.nutritionSource?.includes('ai') ? 'Luna · enregistré' : 'Valeur enregistrée',
+    _kcalPerUnit: mode === 'unit' ? calories / quantity : null,
+    _proteinPerUnit: mode === 'unit' ? protein / quantity : null,
+    _kcalPerGram: mode === 'grams' ? calories / quantity : (estimatedGrams ? calories / estimatedGrams : null),
+    _proteinPerGram: mode === 'grams' ? protein / quantity : (estimatedGrams ? protein / estimatedGrams : null)
+  };
+}
+
+function mealEditorFoodSelectHtml(item, index) {
+  const current = item._customName ? '__custom__' : (item._referenceKey || 'recorded');
+  const personal = [...(state.personalFoods || [])].map(migratePersonalFood).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const general = dedupedGeneralFoodEntries().sort((a, b) => a[1].name.localeCompare(b[1].name, 'fr'));
+  let html = `<select class="meal-edit-food-select" data-meal-edit-food="${index}" aria-label="Aliment"><option value="recorded" ${current === 'recorded' ? 'selected' : ''}>Enregistré : ${escapeHtml(item.name)}</option>`;
+  if (personal.length) {
+    html += '<optgroup label="Ma base personnelle">';
+    html += personal.map(food => `<option value="personal:${food.id}" ${current === `personal:${food.id}` ? 'selected' : ''}>${escapeHtml(food.name)}</option>`).join('');
+    html += '</optgroup>';
+  }
+  html += '<optgroup label="Base générale">';
+  html += general.map(([key, food]) => `<option value="general:${key}" ${current === `general:${key}` ? 'selected' : ''}>${escapeHtml(food.name)}</option>`).join('');
+  html += '</optgroup>';
+  html += `<option value="__custom__" ${current === '__custom__' ? 'selected' : ''}>Autre aliment…</option></select>`;
+  if (item._customName) html += `<input class="meal-edit-custom-name" data-meal-edit-custom-name="${index}" type="text" value="${escapeHtml(item.name)}" placeholder="Nom de l’aliment" />`;
+  return html;
+}
+
+function mealEditQuantityLabel(item) {
+  return item.quantityMode === 'unit' ? pluralizeUnit(item.quantityUnit || 'unité', item.quantity) : 'g';
+}
+
+function renderMealEditItems() {
+  if (!mealEditDraft) return;
+  const rows = (mealEditDraft.items || []).map((item, index) => `
+    <div class="meal-edit-table-row" data-meal-edit-row="${index}">
+      <div class="meal-edit-cell meal-edit-food-cell" data-label="Aliment">
+        ${mealEditorFoodSelectHtml(item, index)}
+      </div>
+      <div class="meal-edit-cell" data-label="Quantité">
+        <div class="meal-edit-quantity"><input data-meal-edit-quantity="${index}" type="number" inputmode="decimal" min="${item.quantityMode === 'unit' ? '0.5' : '1'}" step="${item.quantityMode === 'unit' ? '0.5' : '1'}" value="${round(item.quantity, item.quantityMode === 'unit' ? 1 : 0)}" /><span data-meal-edit-unit="${index}">${escapeHtml(mealEditQuantityLabel(item))}</span></div>
+      </div>
+      <div class="meal-edit-cell" data-label="kcal"><input class="meal-edit-number" data-meal-edit-kcal="${index}" type="number" inputmode="decimal" min="0" step="1" value="${round(item.calories, 0)}" /></div>
+      <div class="meal-edit-cell" data-label="Protéines"><input class="meal-edit-number" data-meal-edit-protein="${index}" type="number" inputmode="decimal" min="0" step="0.1" value="${round(item.protein_g, 1)}" /></div>
+      <div class="meal-edit-row-tools">
+        <span class="nutrition-chip ${item._sourceLabel?.startsWith('Ma base') ? 'personal' : item._sourceLabel?.startsWith('Base générale') ? 'local' : ''}">${escapeHtml(item._sourceLabel || 'Valeur enregistrée')}</span>
+        ${item._nutritionDirty ? '<span class="confirm-chip">Valeur nutritionnelle corrigée</span>' : ''}
+        ${item._customName && !item._nutritionDirty ? '<span class="nutrition-message">Nouvel aliment : corrigez les kcal/protéines si la valeur enregistrée ne convient pas.</span>' : ''}
+        <button type="button" class="meal-delete meal-edit-remove-item" data-meal-edit-remove="${index}">Retirer</button>
+      </div>
+    </div>`).join('');
+
+  $('meal-edit-items').innerHTML = `
+    <div class="meal-edit-table">
+      <div class="meal-edit-table-header"><div>Aliment</div><div>Quantité</div><div>kcal</div><div>Protéines</div></div>
+      ${rows || '<div class="empty-state">Aucun ingrédient détaillé. Utilisez « + Ingrédient » pour reconstituer le repas.</div>'}
+    </div>`;
+  updateMealEditTotals();
+}
+
+function updateMealEditTotals() {
+  if (!mealEditDraft) return;
+  const hasItems = Boolean((mealEditDraft.items || []).length);
+  const kcal = hasItems ? mealEditDraft.items.reduce((sum, item) => sum + Math.max(0, Number(item.calories || 0)), 0) : Number(mealEditDraft._originalCalories || 0);
+  const protein = hasItems ? mealEditDraft.items.reduce((sum, item) => sum + Math.max(0, Number(item.protein_g || 0)), 0) : Number(mealEditDraft._originalProtein || 0);
+  mealEditDraft.calories = kcal;
+  mealEditDraft.protein = protein;
+  $('meal-edit-total-kcal').textContent = Math.round(kcal);
+  $('meal-edit-total-protein').textContent = round(protein, 1);
+}
+
+function refreshMealEditRow(index) {
+  if (!mealEditDraft?.items?.[index]) return;
+  const item = mealEditDraft.items[index];
+  const kcal = document.querySelector(`[data-meal-edit-kcal="${index}"]`);
+  const protein = document.querySelector(`[data-meal-edit-protein="${index}"]`);
+  const unit = document.querySelector(`[data-meal-edit-unit="${index}"]`);
+  if (kcal) kcal.value = round(item.calories, 0);
+  if (protein) protein.value = round(item.protein_g, 1);
+  if (unit) unit.textContent = mealEditQuantityLabel(item);
+  updateMealEditTotals();
+}
+
+function applyMealEditReference(index, ref) {
+  if (!mealEditDraft?.items?.[index] || !ref) return;
+  const item = mealEditDraft.items[index];
+  const previousMode = item.quantityMode;
+  const previousQuantity = Math.max(previousMode === 'unit' ? 0.5 : 1, Number(item.quantity || 1));
+  const previousGrams = Math.max(1, Number(item.estimated_grams || (previousMode === 'grams' ? previousQuantity : 100) || 100));
+  const meta = foodReferenceQuantityMeta(ref);
+  item.name = ref.name;
+  item._referenceKey = ref.dbType === 'personal' ? `personal:${ref.id}` : `general:${ref.key}`;
+  item._customName = false;
+  item._nameDirty = true;
+  item._nutritionDirty = false;
+  item.nutritionSource = ref.dbType === 'personal' ? 'personal-db' : 'local-db';
+  item._sourceLabel = ref.dbType === 'personal' ? 'Ma base' : 'Base générale';
+
+  if (meta.mode === 'unit') {
+    item.quantityMode = 'unit';
+    item.quantityUnit = meta.unitName || 'unité';
+    item.unitWeightG = meta.unitWeightG || null;
+    item._kcalPerUnit = Number(meta.unitKcal || 0);
+    item._proteinPerUnit = Number(meta.unitProtein || 0);
+    item._kcalPerGram = meta.unitWeightG ? item._kcalPerUnit / meta.unitWeightG : null;
+    item._proteinPerGram = meta.unitWeightG ? item._proteinPerUnit / meta.unitWeightG : null;
+    item.quantity = previousMode === 'unit' ? previousQuantity : (meta.unitWeightG ? niceUnitQuantity(previousGrams / meta.unitWeightG) : 1);
+    item.estimated_grams = meta.unitWeightG ? item.quantity * meta.unitWeightG : previousGrams;
+    item.calories = item._kcalPerUnit * item.quantity;
+    item.protein_g = item._proteinPerUnit * item.quantity;
+  } else {
+    item.quantityMode = 'grams';
+    item.quantityUnit = 'g';
+    item.quantity = previousGrams;
+    item.estimated_grams = previousGrams;
+    item._kcalPerGram = Number(meta.kcal100 || 0) / 100;
+    item._proteinPerGram = Number(meta.protein100 || 0) / 100;
+    item._kcalPerUnit = null;
+    item._proteinPerUnit = null;
+    item.unitWeightG = null;
+    item.calories = item._kcalPerGram * item.quantity;
+    item.protein_g = item._proteinPerGram * item.quantity;
+  }
+}
+
+function updateMealEditQuantity(index, rawQuantity) {
+  if (!mealEditDraft?.items?.[index]) return;
+  const item = mealEditDraft.items[index];
+  const min = item.quantityMode === 'unit' ? 0.5 : 1;
+  const quantity = Math.max(min, mealEditCleanNumber(rawQuantity, min));
+  item.quantity = quantity;
+  if (item.quantityMode === 'unit') {
+    item.calories = Math.max(0, Number(item._kcalPerUnit || (item.calories / Math.max(quantity, min)) || 0)) * quantity;
+    item.protein_g = Math.max(0, Number(item._proteinPerUnit || (item.protein_g / Math.max(quantity, min)) || 0)) * quantity;
+    if (item.unitWeightG) item.estimated_grams = quantity * Number(item.unitWeightG);
+  } else {
+    item.estimated_grams = quantity;
+    item.calories = Math.max(0, Number(item._kcalPerGram || 0)) * quantity;
+    item.protein_g = Math.max(0, Number(item._proteinPerGram || 0)) * quantity;
+  }
+  refreshMealEditRow(index);
+}
+
+function updateMealEditNutritionValue(index, field, rawValue) {
+  if (!mealEditDraft?.items?.[index]) return;
+  const item = mealEditDraft.items[index];
+  const value = Math.max(0, mealEditCleanNumber(rawValue, 0));
+  if (field === 'calories') item.calories = value;
+  else item.protein_g = value;
+  const quantity = Math.max(item.quantityMode === 'unit' ? 0.5 : 1, Number(item.quantity || 1));
+  if (item.quantityMode === 'unit') {
+    if (field === 'calories') item._kcalPerUnit = value / quantity;
+    else item._proteinPerUnit = value / quantity;
+    if (item.unitWeightG) {
+      if (field === 'calories') item._kcalPerGram = item._kcalPerUnit / item.unitWeightG;
+      else item._proteinPerGram = item._proteinPerUnit / item.unitWeightG;
+    }
+  } else {
+    if (field === 'calories') item._kcalPerGram = value / quantity;
+    else item._proteinPerGram = value / quantity;
+  }
+  item._nutritionDirty = true;
+  item._sourceLabel = 'Valeurs corrigées';
+  updateMealEditTotals();
+}
+
+function addMealEditIngredient() {
+  if (!mealEditDraft) return;
+  const item = normalizeMealEditItem({
+    name: 'Nouvel ingrédient', quantityMode: 'grams', quantity: 100, quantityUnit: 'g', estimated_grams: 100,
+    calories: 0, protein_g: 0, nutritionSource: 'manual-correction'
+  }, mealEditDraft.items.length);
+  item._customName = true;
+  item._referenceKey = '__custom__';
+  item._nameDirty = true;
+  item._sourceLabel = 'Nouvel ingrédient';
+  mealEditDraft.items.push(item);
+  renderMealEditItems();
+  setTimeout(() => document.querySelector(`[data-meal-edit-custom-name="${mealEditDraft.items.length - 1}"]`)?.focus(), 0);
+}
+
+function mealEditReferenceRecord(item) {
+  const name = String(item.name || '').trim();
+  if (!name || !item._nutritionDirty) return null;
+  const now = new Date().toISOString();
+  if (item.quantityMode === 'unit') {
+    const quantity = Math.max(0.5, Number(item.quantity || 1));
+    const unitKcal = Number(item._kcalPerUnit ?? (item.calories / quantity) ?? 0);
+    const unitProtein = Number(item._proteinPerUnit ?? (item.protein_g / quantity) ?? 0);
+    const unitWeightG = Number(item.unitWeightG || (item.estimated_grams ? item.estimated_grams / quantity : 0)) || null;
+    return {
+      name, referenceMode: 'perUnit', unitName: String(item.quantityUnit || 'unité').trim() || 'unité',
+      unitKcal: Math.max(0, unitKcal), unitProtein: Math.max(0, unitProtein), unitWeightG,
+      kcal100: unitWeightG ? Math.max(0, unitKcal) / unitWeightG * 100 : null,
+      protein100: unitWeightG ? Math.max(0, unitProtein) / unitWeightG * 100 : null,
+      packageWeightG: null, units: null, updatedAt: now, origin: 'meal-correction'
+    };
+  }
+  const grams = Math.max(1, Number(item.quantity || item.estimated_grams || 100));
+  return {
+    name, referenceMode: 'per100g', unitName: '', unitWeightG: null, unitKcal: null, unitProtein: null,
+    kcal100: Math.max(0, Number(item.calories || 0)) / grams * 100,
+    protein100: Math.max(0, Number(item.protein_g || 0)) / grams * 100,
+    packageWeightG: null, units: null, updatedAt: now, origin: 'meal-correction'
+  };
+}
+
+function updatePersonalBaseFromMealEdit() {
+  if (!mealEditDraft || !$('meal-edit-update-base').checked) return 0;
+  let changed = 0;
+  state.personalFoods = Array.isArray(state.personalFoods) ? state.personalFoods : [];
+  for (const item of mealEditDraft.items) {
+    const record = mealEditReferenceRecord(item);
+    if (!record) continue;
+    const wanted = normalizeFoodName(record.name);
+    let existing = state.personalFoods.find(food => normalizedFoodNames(food).includes(wanted));
+    if (existing) {
+      Object.assign(existing, record, { id: existing.id, aliases: existing.aliases || [], createdAt: existing.createdAt || new Date().toISOString() });
+    } else {
+      state.personalFoods.push({ id: makeId(), aliases: [], createdAt: new Date().toISOString(), ...record });
+    }
+    changed += 1;
+  }
+  return changed;
+}
+
+function cleanMealEditItemForSave(item) {
+  const clean = { ...item };
+  for (const key of Object.keys(clean)) if (key.startsWith('_')) delete clean[key];
+  clean.quantity = Number(clean.quantity || 0);
+  clean.calories = Number(clean.calories || 0);
+  clean.protein_g = Number(clean.protein_g || 0);
+  clean.estimated_grams = clean.estimated_grams ? Number(clean.estimated_grams) : null;
+  clean.referenceKey = item._customName ? 'manual-correction' : (item._referenceKey && item._referenceKey !== 'recorded' ? item._referenceKey : (item.referenceKey || 'recorded'));
+  clean.nutritionSource = item._nutritionDirty || item._customName ? 'manual-correction' : (item.nutritionSource || 'recorded');
+  return clean;
+}
+
 function openMealEditor(mealId) {
   const meal = state.meals.find(m => m.id === mealId);
   if (!meal) return;
   editingMealId = mealId;
+  mealEditDraft = {
+    ...structuredClone(meal),
+    _originalCalories: Number(meal.calories || 0),
+    _originalProtein: Number(meal.protein || 0),
+    _originalHadItems: Boolean(Array.isArray(meal.items) && meal.items.length),
+    items: Array.isArray(meal.items) ? meal.items.map(normalizeMealEditItem) : []
+  };
   $('meal-edit-name').textContent = meal.name || 'Repas';
   $('meal-edit-type').value = meal.type || 'Autre';
   $('meal-edit-date').value = meal.dateKey || localDateKey(new Date(meal.timestamp));
   $('meal-edit-date').max = localDateKey();
+  $('meal-edit-update-base').checked = false;
+  renderMealEditItems();
   $('meal-edit-dialog').showModal();
 }
 
 function saveMealEditor() {
   const meal = state.meals.find(m => m.id === editingMealId);
-  if (!meal) { $('meal-edit-dialog').close(); editingMealId = null; return; }
+  if (!meal || !mealEditDraft) { $('meal-edit-dialog').close(); editingMealId = null; mealEditDraft = null; return; }
   const newType = $('meal-edit-type').value;
   const newDateKey = $('meal-edit-date').value || meal.dateKey || selectedDateKey;
   if (newDateKey > localDateKey()) return alert('La date du repas ne peut pas être dans le futur.');
+  if (!mealEditDraft.items.length && mealEditDraft._originalHadItems) return alert('Le repas doit conserver au moins un ingrédient.');
+  for (const item of mealEditDraft.items) {
+    if (!String(item.name || '').trim()) return alert('Chaque ingrédient doit avoir un nom.');
+    if (!(Number(item.quantity) > 0)) return alert(`Quantité invalide pour « ${item.name} ».`);
+    if (!Number.isFinite(Number(item.calories)) || Number(item.calories) < 0) return alert(`Calories invalides pour « ${item.name} ».`);
+    if (!Number.isFinite(Number(item.protein_g)) || Number(item.protein_g) < 0) return alert(`Protéines invalides pour « ${item.name} ».`);
+  }
+
+  const updatedBaseCount = updatePersonalBaseFromMealEdit();
+  updateMealEditTotals();
   meal.type = newType;
+  meal.items = mealEditDraft.items.map(cleanMealEditItemForSave);
+  meal.calories = Number(mealEditDraft.calories || 0);
+  meal.protein = Number(mealEditDraft.protein || 0);
+  if (meal.items.length) meal.name = meal.items.map(item => item.name).slice(0, 3).join(', ');
   if (newDateKey !== meal.dateKey) {
     meal.dateKey = newDateKey;
     meal.timestamp = timestampWithDateKey(meal.timestamp, newDateKey);
   }
   saveState();
+  if (updatedBaseCount) {
+    populateManualFoodSelect();
+    renderLocalFoodDb();
+  }
   $('meal-edit-dialog').close();
   editingMealId = null;
+  mealEditDraft = null;
   updateToday();
   renderHistory();
+  if (updatedBaseCount) alert(`${updatedBaseCount} référence${updatedBaseCount > 1 ? 's' : ''} mise${updatedBaseCount > 1 ? 's' : ''} à jour dans votre base personnelle.`);
 }
 
 function setupMealEditing() {
-  $('meal-edit-cancel').addEventListener('click', () => { editingMealId = null; $('meal-edit-dialog').close(); });
+  $('meal-edit-cancel').addEventListener('click', () => { editingMealId = null; mealEditDraft = null; $('meal-edit-dialog').close(); });
   $('meal-edit-save').addEventListener('click', saveMealEditor);
-  $('meal-edit-dialog').addEventListener('cancel', () => { editingMealId = null; });
+  $('meal-edit-add-item').addEventListener('click', addMealEditIngredient);
+  $('meal-edit-dialog').addEventListener('cancel', () => { editingMealId = null; mealEditDraft = null; });
+
+  $('meal-edit-items').addEventListener('click', event => {
+    const remove = event.target.closest('[data-meal-edit-remove]');
+    if (!remove || !mealEditDraft) return;
+    mealEditDraft.items.splice(Number(remove.dataset.mealEditRemove), 1);
+    renderMealEditItems();
+  });
+
+  $('meal-edit-items').addEventListener('input', event => {
+    const q = event.target.closest('[data-meal-edit-quantity]');
+    if (q) return updateMealEditQuantity(Number(q.dataset.mealEditQuantity), q.value);
+    const kcal = event.target.closest('[data-meal-edit-kcal]');
+    if (kcal) return updateMealEditNutritionValue(Number(kcal.dataset.mealEditKcal), 'calories', kcal.value);
+    const prot = event.target.closest('[data-meal-edit-protein]');
+    if (prot) return updateMealEditNutritionValue(Number(prot.dataset.mealEditProtein), 'protein', prot.value);
+    const custom = event.target.closest('[data-meal-edit-custom-name]');
+    if (custom && mealEditDraft?.items?.[Number(custom.dataset.mealEditCustomName)]) {
+      const item = mealEditDraft.items[Number(custom.dataset.mealEditCustomName)];
+      item.name = custom.value.trim();
+      item._nameDirty = true;
+    }
+  });
+
+  $('meal-edit-items').addEventListener('change', event => {
+    const select = event.target.closest('[data-meal-edit-food]');
+    if (select && mealEditDraft?.items?.[Number(select.dataset.mealEditFood)]) {
+      const index = Number(select.dataset.mealEditFood);
+      const item = mealEditDraft.items[index];
+      if (select.value === 'recorded') {
+        const original = item._recordedRaw;
+        if (original) mealEditDraft.items[index] = normalizeMealEditItem(original, index);
+        renderMealEditItems();
+        return;
+      }
+      if (select.value === '__custom__') {
+        item._referenceKey = '__custom__';
+        item._customName = true;
+        item._nameDirty = true;
+        item._sourceLabel = 'Nouvel aliment';
+        renderMealEditItems();
+        setTimeout(() => document.querySelector(`[data-meal-edit-custom-name="${index}"]`)?.focus(), 0);
+        return;
+      }
+      const ref = foodReferenceByKey(select.value);
+      if (ref) {
+        applyMealEditReference(index, ref);
+        renderMealEditItems();
+      }
+      return;
+    }
+
+    const custom = event.target.closest('[data-meal-edit-custom-name]');
+    if (custom && mealEditDraft?.items?.[Number(custom.dataset.mealEditCustomName)]) {
+      const index = Number(custom.dataset.mealEditCustomName);
+      const item = mealEditDraft.items[index];
+      item.name = custom.value.trim() || item.name || 'Aliment';
+      const local = findLocalFoodReference(item.name);
+      if (local) {
+        applyMealEditReference(index, local);
+        renderMealEditItems();
+      }
+    }
+  });
 }
 
 function updatePersonalFoodFormMode() {

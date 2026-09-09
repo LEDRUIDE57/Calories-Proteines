@@ -1,4 +1,4 @@
-const CACHE='calories-v1-11-20260909-inline-base';
+const CACHE='calories-v1-12-20260909-meal-detail-edit';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([

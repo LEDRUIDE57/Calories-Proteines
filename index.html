@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.11</div>
+    <div class="version">V1.12</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -500,12 +500,13 @@
     <button class="nav-item" data-view="settings"><span>⚙</span><small>Réglages</small></button>
   </nav>
 
-  <dialog id="meal-edit-dialog">
+  <dialog id="meal-edit-dialog" class="meal-detail-dialog">
     <div class="dialog-card">
       <div class="eyebrow">REPAS ENREGISTRÉ</div>
       <h2>Modifier le repas</h2>
       <p id="meal-edit-name" class="muted"></p>
-      <div class="form-grid single-column">
+
+      <div class="form-grid meal-edit-top-grid">
         <label>Type de repas
           <select id="meal-edit-type">
             <option>Petit-déjeuner</option>
@@ -519,10 +520,31 @@
           <input id="meal-edit-date" type="date" />
         </label>
       </div>
-      <p class="muted small">Cette correction reclasse uniquement le repas. Elle ne relance pas Luna et ne modifie ni les aliments, ni les calories, ni les protéines.</p>
+
+      <div class="meal-edit-section-title">
+        <div>
+          <strong>Ingrédients du repas</strong>
+          <span>Modifiez le libellé, la quantité, les kcal ou les protéines.</span>
+        </div>
+        <button id="meal-edit-add-item" type="button" class="button secondary compact">+ Ingrédient</button>
+      </div>
+
+      <div id="meal-edit-items"></div>
+
+      <div class="meal-edit-total">
+        <span>Total du repas</span>
+        <strong><span id="meal-edit-total-kcal">0</span> kcal · <span id="meal-edit-total-protein">0</span> g protéines</strong>
+      </div>
+
+      <label class="meal-base-update-option">
+        <input id="meal-edit-update-base" type="checkbox" />
+        <span><strong>Mettre à jour ma base personnelle</strong><small>Uniquement pour les lignes dont vous avez corrigé directement les kcal/protéines. Si cette case reste décochée, les corrections concernent seulement ce repas.</small></span>
+      </label>
+
+      <p class="muted small">Choisir un aliment déjà présent dans « Ma base » ou « Base générale » recalcule immédiatement la ligne. Aucune mise à jour de votre base personnelle n’est faite silencieusement.</p>
       <div class="dialog-actions">
         <button id="meal-edit-cancel" type="button" class="button secondary">Annuler</button>
-        <button id="meal-edit-save" type="button" class="button primary">Enregistrer</button>
+        <button id="meal-edit-save" type="button" class="button primary">Enregistrer les modifications</button>
       </div>
     </div>
   </dialog>
