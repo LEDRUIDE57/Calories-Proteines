@@ -369,7 +369,9 @@ function setStatus(message, type = '') {
 function normalizeFoodName(value = '') {
   return String(value)
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase().replace(/[^a-z0-9œæ]+/g, ' ').trim();
+    .toLowerCase()
+    .replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
 function findLocalFoodReference(name) {
@@ -437,6 +439,18 @@ function prepareAnalysis(analysis) {
     };
   });
   return { ...analysis, items, total_calories: items.reduce((s, i) => s + i.calories, 0), total_protein_g: items.reduce((s, i) => s + i.protein_g, 0) };
+}
+
+function applyKnownNutritionReferences() {
+  if (!currentAnalysis?.items) return;
+  currentAnalysis.items.forEach((item, index) => {
+    const local = findLocalFoodReference(item.name);
+    if (!local) return;
+    const source = local.dbType === 'personal' ? 'personal-db' : 'local-db';
+    const label = local.dbType === 'personal' ? 'Votre référence personnelle' : 'Référence locale';
+    const meta = local.dbType === 'personal' ? personalFoodMeta(local) : '';
+    applyNutritionReference(index, local.kcal100, local.protein100, source, `${label} : ${local.kcal100} kcal et ${local.protein100} g protéines / 100 g.${meta ? ` ${meta}.` : ''}`);
+  });
 }
 
 function needsQuantityConfirmation(name = '') {
@@ -514,45 +528,70 @@ async function recalculateNutritionForName(index) {
   renderAnalysisEditor();
 }
 
-function updateAnalysisItemFromGrams(index, grams) {
+function updateAnalysisItemFromGrams(index, grams, rerender = false) {
   if (!currentAnalysis?.items?.[index]) return;
   const item = currentAnalysis.items[index];
   const safeGrams = Math.max(1, Number(grams || 1));
   item.estimated_grams = safeGrams;
   item.calories = item.kcalPerGram * safeGrams;
   item.protein_g = item.proteinPerGram * safeGrams;
-  renderAnalysisEditor();
+  if (rerender) renderAnalysisEditor();
+  else refreshAnalysisRowNumbers(index);
+}
+
+function nutritionSourceLabel(item) {
+  if (item.nutritionSource === 'personal-db') return '<span class="nutrition-chip personal">Ma base</span>';
+  if (item.nutritionSource === 'local-db') return '<span class="nutrition-chip local">Base générale</span>';
+  if (item.nutritionSource === 'text-ai') return '<span class="nutrition-chip">Luna · recalcul</span>';
+  return '<span class="nutrition-chip ai">Luna · photo</span>';
 }
 
 function renderAnalysisEditor() {
   if (!currentAnalysis) return;
-  $('analysis-items').innerHTML = (currentAnalysis.items || []).map((item, index) => `
-    <div class="analysis-edit-row" data-analysis-index="${index}">
-      <div class="analysis-main">
-        <label class="analysis-name-label">Aliment
-          <input class="analysis-name-input" data-analysis-name="${index}" type="text" list="food-name-suggestions" value="${escapeHtml(item.name)}" />
-        </label>
+  const rows = (currentAnalysis.items || []).map((item, index) => `
+    <div class="analysis-table-row" data-analysis-index="${index}">
+      <div class="analysis-cell analysis-food-cell" data-label="Aliment">
+        <input class="analysis-name-input" aria-label="Aliment" data-analysis-name="${index}" type="text" list="food-name-suggestions" value="${escapeHtml(item.name)}" />
+      </div>
+      <div class="analysis-cell analysis-weight-cell" data-label="Poids">
+        <div class="table-grams-input"><input aria-label="Poids en grammes" data-analysis-grams="${index}" type="number" inputmode="numeric" min="1" step="1" value="${Math.round(item.estimated_grams)}" /><span>g</span></div>
+      </div>
+      <div class="analysis-cell analysis-value-cell" data-label="kcal"><strong data-analysis-kcal="${index}">${Math.round(item.calories)}</strong><span>kcal</span></div>
+      <div class="analysis-cell analysis-value-cell" data-label="Protéines"><strong data-analysis-protein="${index}">${round(item.protein_g, 1)}</strong><span>g</span></div>
+      <div class="analysis-row-tools">
         <div class="analysis-flags">
-          ${needsQuantityConfirmation(item.name) ? '<span class="confirm-chip">Quantité à confirmer</span>' : ''}
-          ${item.nutritionSource === 'text-ai' ? '<span class="nutrition-chip">Nutrition recalculée</span>' : ''}
-          ${item.nutritionSource === 'personal-db' ? '<span class="nutrition-chip personal">Ma base personnelle</span>' : ''}
-          ${item.nutritionSource === 'local-db' ? '<span class="nutrition-chip local">Base alimentaire</span>' : ''}
+          ${nutritionSourceLabel(item)}
+          ${needsQuantityConfirmation(item.name) ? '<span class="confirm-chip">Poids à confirmer</span>' : ''}
         </div>
         ${item.nutritionStatus === 'loading' ? '<div class="nutrition-message loading">Recalcul des calories et protéines…</div>' : ''}
         ${item.nutritionNote ? `<div class="nutrition-message ${item.nutritionError ? 'error' : ''}">${escapeHtml(item.nutritionNote)}</div>` : ''}
-        <button type="button" class="recalc-nutrition" data-recalc-nutrition="${index}" ${item.nutritionStatus === 'loading' ? 'disabled' : ''}>↻ Recalculer nutrition</button>
-        <div class="portion-editor">
-          <button type="button" class="portion-btn" data-adjust-grams="${index}" data-delta="-10">−</button>
-          <label>Quantité<div class="grams-input-wrap"><input data-analysis-grams="${index}" type="number" inputmode="numeric" min="1" step="5" value="${Math.round(item.estimated_grams)}" /><span>g</span></div></label>
-          <button type="button" class="portion-btn" data-adjust-grams="${index}" data-delta="10">+</button>
+        <div class="analysis-row-actions">
+          <button type="button" class="recalc-nutrition" data-recalc-nutrition="${index}" ${item.nutritionStatus === 'loading' ? 'disabled' : ''}>↻ Recalculer</button>
+          <button type="button" class="remove-analysis-item" data-remove-analysis="${index}">Retirer</button>
         </div>
       </div>
-      <div class="analysis-numbers">
-        <strong>${Math.round(item.calories)} kcal</strong>
-        <span>${round(item.protein_g, 1)} g prot.</span>
-        <button type="button" class="remove-analysis-item" data-remove-analysis="${index}">Retirer</button>
-      </div>
     </div>`).join('');
+
+  $('analysis-items').innerHTML = `
+    <div class="analysis-table" role="table" aria-label="Ingrédients estimés">
+      <div class="analysis-table-header" role="row">
+        <div role="columnheader">Aliment</div>
+        <div role="columnheader">Poids</div>
+        <div role="columnheader">kcal</div>
+        <div role="columnheader">Protéines</div>
+      </div>
+      ${rows || '<div class="empty-state">Aucun ingrédient.</div>'}
+    </div>`;
+  recalcAnalysisTotals();
+}
+
+function refreshAnalysisRowNumbers(index) {
+  if (!currentAnalysis?.items?.[index]) return;
+  const item = currentAnalysis.items[index];
+  const kcal = document.querySelector(`[data-analysis-kcal="${index}"]`);
+  const protein = document.querySelector(`[data-analysis-protein="${index}"]`);
+  if (kcal) kcal.textContent = Math.round(item.calories);
+  if (protein) protein.textContent = round(item.protein_g, 1);
   recalcAnalysisTotals();
 }
 
@@ -596,6 +635,11 @@ function setupPhoto() {
       currentAnalysis.items.splice(Number(remove.dataset.removeAnalysis), 1);
       renderAnalysisEditor();
     }
+  });
+
+  $('analysis-items').addEventListener('input', event => {
+    const gramsInput = event.target.closest('[data-analysis-grams]');
+    if (gramsInput) updateAnalysisItemFromGrams(Number(gramsInput.dataset.analysisGrams), Number(gramsInput.value));
   });
 
   $('analysis-items').addEventListener('change', event => {
@@ -651,6 +695,9 @@ async function analyzePhoto() {
     }
     const analysis = await response.json();
     currentAnalysis = prepareAnalysis(analysis);
+    // Dès la reconnaissance, utiliser d'abord les références connues. Ainsi,
+    // une simple correction de poids recalcule avec la base personnelle/générale.
+    applyKnownNutritionReferences();
     renderAnalysisEditor();
     $('analysis-confidence').textContent = analysis.confidence ? `Confiance ${analysis.confidence}` : 'Estimation';
     $('analysis-note').textContent = analysis.notes || 'Estimation visuelle : corrigez les quantités si nécessaire.';

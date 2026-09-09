@@ -191,3 +191,41 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
   .personal-food-form-actions{flex-direction:column-reverse}
   .personal-food-form-actions .button{width:100%}
 }
+
+/* V1.8 — tableau de contrôle nutritionnel à 4 colonnes */
+.analysis-table{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.analysis-table-header{display:grid;grid-template-columns:minmax(180px,2fr) minmax(86px,.75fr) minmax(76px,.65fr) minmax(92px,.8fr);gap:0;background:#f2f5f2;border-bottom:1px solid var(--line);font-size:12px;font-weight:850;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+.analysis-table-header>div{padding:9px 10px;border-right:1px solid var(--line)}
+.analysis-table-header>div:last-child{border-right:0}
+.analysis-table-row{display:grid;grid-template-columns:minmax(180px,2fr) minmax(86px,.75fr) minmax(76px,.65fr) minmax(92px,.8fr);align-items:stretch;border-bottom:1px solid var(--line)}
+.analysis-table-row:last-child{border-bottom:0}
+.analysis-cell{display:flex;align-items:center;min-width:0;padding:9px 10px;border-right:1px solid var(--line)}
+.analysis-cell:nth-child(4){border-right:0}
+.analysis-food-cell .analysis-name-input{width:100%;min-height:42px;font-weight:800;padding:8px 9px}
+.analysis-weight-cell{justify-content:center}
+.table-grams-input{display:flex;align-items:center;gap:5px;width:100%}
+.table-grams-input input{width:100%;min-width:54px;text-align:right;font-weight:800;padding:8px 7px;min-height:42px}
+.table-grams-input span{font-size:13px;color:var(--muted);font-weight:700}
+.analysis-value-cell{justify-content:flex-end;gap:4px;text-align:right;white-space:nowrap}
+.analysis-value-cell strong{font-size:16px}
+.analysis-value-cell span{font-size:12px;color:var(--muted);font-weight:700}
+.analysis-row-tools{grid-column:1 / -1;display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;padding:7px 10px 9px;background:#fbfcfb;border-top:1px dashed var(--line)}
+.analysis-row-tools .analysis-flags{margin-right:auto}
+.analysis-row-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
+.analysis-row-actions .recalc-nutrition,.analysis-row-actions .remove-analysis-item{margin:0;padding:5px 7px}
+.nutrition-chip.ai{background:#f4f4f4;color:#666;border-color:#ddd}
+.analysis-row-tools .nutrition-message{flex-basis:100%;margin:0;padding:4px 0}
+
+@media (max-width:650px){
+  .analysis-table{overflow:visible;border:0;background:transparent}
+  .analysis-table-header{display:none}
+  .analysis-table-row{grid-template-columns:minmax(0,1.5fr) minmax(76px,.65fr) minmax(72px,.55fr) minmax(80px,.65fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:10px;background:#fff}
+  .analysis-cell{padding:8px 7px}
+  .analysis-cell:before{content:attr(data-label);display:block;font-size:9px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:850;position:absolute;transform:translateY(-27px)}
+  .analysis-cell{position:relative;padding-top:24px}
+  .analysis-food-cell .analysis-name-input{font-size:13px;padding:7px 6px}
+  .table-grams-input input{font-size:13px;padding:7px 5px}
+  .analysis-value-cell strong{font-size:14px}
+  .analysis-value-cell span{font-size:10px}
+  .analysis-row-tools{padding:7px 8px}
+}
