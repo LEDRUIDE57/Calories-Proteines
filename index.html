@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.8</div>
+    <div class="version">V1.10</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -190,7 +190,7 @@
         <div class="panel-title-row">
           <div>
             <h3>Estimation à corriger</h3>
-            <p class="muted small panel-subtitle">Contrôlez les 4 colonnes. Modifiez le nom ou le poids : kcal et protéines se recalculent avec votre base personnelle, puis la base générale, puis Luna si nécessaire.</p>
+            <p class="muted small panel-subtitle">Contrôlez les 4 colonnes. Choisissez l’aliment dans votre base puis corrigez la quantité dans son unité naturelle (œuf, pot, tranche, part, cuillère…) ou en grammes. Les kcal et protéines se recalculent immédiatement.</p>
           </div>
           <span id="analysis-confidence" class="pill neutral"></span>
         </div>
@@ -256,8 +256,8 @@
           <label id="manual-custom-wrap" hidden>Nom de l’aliment
             <input id="manual-name" type="text" placeholder="Ex. quiche maison" />
           </label>
-          <label>Quantité (g)
-            <input id="manual-grams" type="number" inputmode="numeric" min="1" step="5" placeholder="100" />
+          <label><span id="manual-quantity-label">Quantité (g)</span>
+            <input id="manual-quantity" type="number" inputmode="decimal" min="1" step="1" placeholder="100" />
           </label>
           <label>Calories
             <input id="manual-calories" type="number" inputmode="numeric" min="0" placeholder="kcal" />
@@ -326,8 +326,8 @@
       <div class="help-list">
         <details open><summary>Analyser un repas par photo</summary><p>Choisissez une photo ou prenez-la avec la tablette. Luna identifie les aliments et propose des quantités, calories et protéines. Le résultat reste une estimation visuelle.</p></details>
         <details><summary>Corriger une estimation</summary><p>Si le nom reconnu est faux, corrigez-le : Calories recalcule alors une nouvelle référence kcal/protéines pour cet aliment, sans conserver celle de l’aliment initial. L’application cherche d’abord dans votre base personnelle, puis dans la base générale. Luna n’est appelé pour un recalcul texte que si aucune référence locale ne correspond. Ensuite, une modification des grammes recalcule proportionnellement les valeurs. Le repas ne peut pas être validé tant qu’un recalcul demandé a échoué.</p></details>
-        <details><summary>Ajouter manuellement</summary><p>Le menu propose d’abord les références de votre base personnelle, puis la base générale. Indiquez la quantité et les calories/protéines sont calculées à partir des valeurs pour 100 g. Pour un aliment ponctuel absent, utilisez « Autre aliment ».</p></details>
-        <details><summary>Ajouter un produit à ma base locale</summary><p>Dans Réglages → Base alimentaire locale, saisissez le nom du produit ainsi que les kcal et protéines indiquées sur l’étiquette pour 100 g. Vous pouvez aussi noter le poids du paquet, le nombre d’unités et leur nom (rond, tranche, pot…). Lors d’une correction photo ou d’une saisie manuelle, votre base personnelle est consultée avant Luna.</p></details>
+        <details><summary>Ajouter manuellement</summary><p>Le menu propose d’abord les références de votre base personnelle, puis la base générale. La quantité s’exprime automatiquement dans l’unité de l’aliment (œuf, pot, tranche, part…) ou en grammes. Les calories/protéines se recalculent immédiatement. Pour un aliment ponctuel absent, utilisez « Autre aliment ».</p></details>
+        <details><summary>Ajouter un produit à ma base locale</summary><p>Dans Réglages → Base alimentaire locale, choisissez une référence « pour 100 g » ou « par unité / portion ». Vous pouvez ainsi enregistrer 1 œuf, 1 Kiri, 1 pot, 1 part ou 1 cuillère, tandis que riz, pâtes ou pommes de terre peuvent rester en grammes. Votre base personnelle est consultée avant Luna.</p></details>
         <details><summary>Calories et protéines</summary><p>Les calories des repas s’additionnent. Les calories dépensées par une activité sont déduites du bilan calorique net. Les protéines consommées s’additionnent et ne sont jamais déduites par le sport.</p></details>
         <details><summary>Ajouter une activité</summary><p>Choisissez l’activité, puis sa source dans le menu proposé. La source habituelle peut être définie dans Réglages (par exemple Vélo → eFlow, Marche → Samsung Health, Vélo appart → David Douillet). Saisissez ensuite les kcal fournies par cette application ou cet appareil : Calories ne les ré-estime pas.</p></details>
         <details><summary>Comprendre le bilan net</summary><p>Bilan net = calories alimentaires − calories d’activité. Le graphe est vert jusqu’à l’objectif et rouge uniquement pour la partie qui dépasse l’objectif.</p></details>
@@ -404,24 +404,55 @@
           <h4>Ajouter une référence personnelle</h4>
           <div class="form-grid">
             <label>Nom du produit / aliment
-              <input id="personal-food-name" type="text" placeholder="Ex. Chèvre chaud en rond" />
+              <input id="personal-food-name" type="text" placeholder="Ex. Œuf, Kiri, riz cuit…" />
             </label>
-            <label>kcal / 100 g
-              <input id="personal-food-kcal100" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 295" />
-            </label>
-            <label>Protéines / 100 g
-              <input id="personal-food-protein100" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 18,5" />
-            </label>
-            <label>Poids total du paquet (g) — facultatif
-              <input id="personal-food-package-weight" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 160" />
-            </label>
-            <label>Nombre d’unités / portions — facultatif
-              <input id="personal-food-units" type="number" inputmode="decimal" min="0" step="1" placeholder="Ex. 4" />
-            </label>
-            <label>Nom de l’unité — facultatif
-              <input id="personal-food-unit-name" type="text" placeholder="Ex. rond, tranche, pot" />
+            <label>Type de référence
+              <select id="personal-food-reference-mode">
+                <option value="per100g">Valeurs pour 100 g</option>
+                <option value="perUnit">Valeurs par unité / portion</option>
+              </select>
             </label>
           </div>
+
+          <div id="personal-food-per100-fields" class="form-grid">
+            <label>kcal / 100 g
+              <input id="personal-food-kcal100" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 143" />
+            </label>
+            <label>Protéines / 100 g
+              <input id="personal-food-protein100" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 13" />
+            </label>
+          </div>
+
+          <div id="personal-food-unit-fields" class="form-grid">
+            <label>Nom de l’unité / portion
+              <input id="personal-food-unit-name" type="text" placeholder="Ex. œuf, Kiri, pot, tranche, c. à soupe, part" />
+            </label>
+            <label>Poids moyen d’une unité (g) — facultatif
+              <input id="personal-food-unit-weight" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 55" />
+            </label>
+          </div>
+
+          <div id="personal-food-perunit-fields" class="form-grid" hidden>
+            <label>kcal pour 1 unité / portion
+              <input id="personal-food-unit-kcal" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 80" />
+            </label>
+            <label>Protéines pour 1 unité / portion
+              <input id="personal-food-unit-protein" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 6,5" />
+            </label>
+          </div>
+
+          <details id="personal-food-package-helper" class="package-helper">
+            <summary>Aide : calculer le poids d’une unité depuis un paquet</summary>
+            <div class="form-grid package-helper-grid">
+              <label>Poids total du paquet (g)
+                <input id="personal-food-package-weight" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 160" />
+              </label>
+              <label>Nombre d’unités / portions
+                <input id="personal-food-units" type="number" inputmode="decimal" min="0" step="1" placeholder="Ex. 4" />
+              </label>
+            </div>
+            <p id="personal-food-package-result" class="muted small"></p>
+          </details>
           <p id="personal-food-form-status" class="muted small"></p>
           <div class="personal-food-form-actions">
             <button id="cancel-personal-food-edit" type="button" class="button secondary" hidden>Annuler</button>

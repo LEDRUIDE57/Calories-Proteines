@@ -229,3 +229,25 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
   .analysis-value-cell span{font-size:10px}
   .analysis-row-tools{padding:7px 8px}
 }
+
+/* V1.10 — quantités naturelles + import de la base locale utilisateur */
+.analysis-food-control{display:grid;gap:6px;width:100%;min-width:0}
+.analysis-food-select,.analysis-custom-name-input{width:100%;min-height:42px;padding:8px 9px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-weight:750;color:inherit}
+.analysis-custom-name-input{font-weight:700}
+.table-quantity-input{display:flex;align-items:center;gap:6px;width:100%;min-width:0}
+.table-quantity-input input{width:100%;min-width:52px;text-align:right;font-weight:800;padding:8px 7px;min-height:42px}
+.table-quantity-input span{font-size:12px;color:var(--muted);font-weight:750;line-height:1.1;max-width:82px}
+.package-helper{margin-top:12px;border:1px dashed var(--line);border-radius:12px;padding:10px 12px;background:#fbfcfb}
+.package-helper summary{cursor:pointer;font-weight:750;color:var(--green)}
+.package-helper-grid{margin-top:10px}
+#personal-food-per100-fields[hidden],#personal-food-perunit-fields[hidden]{display:none!important}
+.personal-food-form .form-grid{margin-top:10px}
+.analysis-table-header{grid-template-columns:minmax(190px,2fr) minmax(110px,.9fr) minmax(76px,.65fr) minmax(92px,.8fr)}
+.analysis-table-row{grid-template-columns:minmax(190px,2fr) minmax(110px,.9fr) minmax(76px,.65fr) minmax(92px,.8fr)}
+
+@media (max-width:650px){
+  .analysis-table-row{grid-template-columns:minmax(0,1.55fr) minmax(92px,.75fr) minmax(68px,.55fr) minmax(76px,.62fr)}
+  .analysis-food-select,.analysis-custom-name-input{font-size:12px;padding:7px 5px;min-height:40px}
+  .table-quantity-input input{font-size:13px;padding:7px 5px;min-height:40px}
+  .table-quantity-input span{font-size:10px;max-width:66px}
+}

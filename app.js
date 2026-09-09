@@ -14,27 +14,1056 @@ const DEFAULT_ACTIVITY_SOURCES = {
 
 
 const FOOD_DB = {
-  apple: { name: 'Pomme', kcal100: 52, protein100: 0.3 },
-  banana: { name: 'Banane', kcal100: 89, protein100: 1.1 },
-  bread: { name: 'Pain', kcal100: 265, protein100: 9 },
+  apple: { name: 'Pomme', kcal100: 52, protein100: 0.3, unitName: 'pomme', unitWeightG: 150 },
+  banana: { name: 'Banane', kcal100: 89, protein100: 1.1, unitName: 'banane', unitWeightG: 120 },
+  bread: { name: 'Pain', kcal100: 265, protein100: 9, unitName: 'tranche', unitWeightG: 30 },
   carrot: { name: 'Carottes', kcal100: 41, protein100: 0.9 },
   cheese: { name: 'Fromage type emmental', kcal100: 380, protein100: 28 },
   chicken: { name: 'Poulet cuit', kcal100: 165, protein100: 31 },
-  egg: { name: 'Œuf', kcal100: 143, protein100: 13 },
+  egg: { name: 'Œuf', kcal100: 143, protein100: 13, unitName: 'œuf', unitWeightG: 55 },
   fries: { name: 'Frites', kcal100: 312, protein100: 3.4 },
-  ham: { name: 'Jambon blanc', kcal100: 116, protein100: 20 },
+  ham: { name: 'Jambon blanc', kcal100: 116, protein100: 20, unitName: 'tranche', unitWeightG: 40 },
   pasta: { name: 'Pâtes cuites', kcal100: 158, protein100: 5.8 },
   potato: { name: 'Pommes de terre cuites', kcal100: 87, protein100: 1.9 },
   rice: { name: 'Riz cuit', kcal100: 130, protein100: 2.7 },
   salad: { name: 'Salade verte', kcal100: 15, protein100: 1.4 },
   salmon: { name: 'Saumon cuit', kcal100: 206, protein100: 22 },
-  steak: { name: 'Steak haché', kcal100: 250, protein100: 26 },
+  steak: { name: 'Steak haché', kcal100: 250, protein100: 26, unitName: 'steak', unitWeightG: 100 },
   tuna: { name: 'Thon au naturel', kcal100: 116, protein100: 26 },
   watermelon: { name: 'Pastèque', kcal100: 30, protein100: 0.6 },
-  yogurt: { name: 'Yaourt nature', kcal100: 63, protein100: 4 }
+  yogurt: { name: 'Yaourt nature', kcal100: 63, protein100: 4, unitName: 'pot', unitWeightG: 125 }
 };
 
+const FOOD_ALIASES = {
+  apple: ['pomme'], banana: ['banane'], bread: ['pain'], carrot: ['carotte', 'carottes'],
+  cheese: ['fromage type emmental', 'emmental'], chicken: ['poulet', 'poulet cuit'], egg: ['oeuf', 'œuf'],
+  fries: ['frite', 'frites'], ham: ['jambon blanc'], pasta: ['pates', 'pâtes', 'pates cuites', 'pâtes cuites'],
+  potato: ['pomme de terre', 'pommes de terre', 'pommes de terre cuites'], rice: ['riz', 'riz cuit'],
+  salad: ['salade', 'salade verte'], salmon: ['saumon', 'saumon cuit'], steak: ['steak hache', 'steak haché'],
+  tuna: ['thon', 'thon au naturel'], watermelon: ['pasteque', 'pastèque'], yogurt: ['yaourt', 'yaourt nature']
+};
+
+const PERSONAL_FOOD_SEED_VERSION = 1;
+const BUNDLED_PERSONAL_FOODS = [
+  {
+    "id": "import-20260909-u01",
+    "name": "Banane",
+    "aliases": [
+      "banane"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "banane",
+    "unitKcal": 70,
+    "unitProtein": 1.3,
+    "kcal100": 90,
+    "protein100": 1.671,
+    "unitWeightG": 77.778,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u02",
+    "name": "Biscotte",
+    "aliases": [
+      "biscotte"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "biscotte",
+    "unitKcal": 38,
+    "unitProtein": 1.0,
+    "kcal100": 383,
+    "protein100": 10.079,
+    "unitWeightG": 9.922,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u03",
+    "name": "Boîte sardine huile Odyssée",
+    "aliases": [
+      "boite sardine huile odyssee",
+      "sardine huile odyssee"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "boîte",
+    "unitKcal": 110,
+    "unitProtein": 23.0,
+    "kcal100": 229,
+    "protein100": 47.882,
+    "unitWeightG": 48.035,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u04",
+    "name": "Bouchée chocolat Lindor",
+    "aliases": [
+      "bouchee chocolat lindor"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "bouchée",
+    "unitKcal": 40,
+    "unitProtein": 0.3,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u05",
+    "name": "Carreau chocolat Lindor",
+    "aliases": [
+      "carreau chocolat lindor"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "carreau",
+    "unitKcal": 78,
+    "unitProtein": 1.0,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u06",
+    "name": "Carreau chocolat link (15 g)",
+    "aliases": [
+      "carreau chocolat link",
+      "carreau chocolat link 15g"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "carreau",
+    "unitKcal": 75,
+    "unitProtein": 1.2,
+    "kcal100": 500,
+    "protein100": 8.0,
+    "unitWeightG": 15.0,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u07",
+    "name": "Croque monsieur maison",
+    "aliases": [
+      "croque monsieur maison"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "croque-monsieur",
+    "unitKcal": 340,
+    "unitProtein": 19.0,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u08",
+    "name": "Datte",
+    "aliases": [
+      "datte"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "datte",
+    "unitKcal": 22,
+    "unitProtein": 0.2,
+    "kcal100": 280,
+    "protein100": 2.545,
+    "unitWeightG": 7.857,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u09",
+    "name": "Fromage chèvre raclette 1 tranche",
+    "aliases": [
+      "fromage chevre raclette",
+      "chevre raclette"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "tranche",
+    "unitKcal": 91,
+    "unitProtein": 6.0,
+    "kcal100": 354,
+    "protein100": 23.341,
+    "unitWeightG": 25.706,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u10",
+    "name": "Fromage portion Kiri",
+    "aliases": [
+      "kiri",
+      "fromage kiri",
+      "fromage portion kiri"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "portion",
+    "unitKcal": 50,
+    "unitProtein": 2.0,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u11",
+    "name": "Fromage raclette 1 tranche",
+    "aliases": [
+      "fromage raclette",
+      "raclette"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "tranche",
+    "unitKcal": 82,
+    "unitProtein": 6.0,
+    "kcal100": 328,
+    "protein100": 24.0,
+    "unitWeightG": 25.0,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u12",
+    "name": "Kiwi",
+    "aliases": [
+      "kiwi"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "kiwi",
+    "unitKcal": 60,
+    "unitProtein": 1.0,
+    "kcal100": 60,
+    "protein100": 1.0,
+    "unitWeightG": 100.0,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u13",
+    "name": "Lot de 3 petits beurre",
+    "aliases": [
+      "lot de 3 petits beurre",
+      "3 petits beurre",
+      "petits beurre"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "lot",
+    "unitKcal": 111,
+    "unitProtein": 1.8,
+    "kcal100": 445,
+    "protein100": 7.216,
+    "unitWeightG": 24.944,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u14",
+    "name": "Mi-cho-ko",
+    "aliases": [
+      "mi cho ko",
+      "michoko"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "pièce",
+    "unitKcal": 32,
+    "unitProtein": 1.0,
+    "kcal100": 480,
+    "protein100": 15.0,
+    "unitWeightG": 6.667,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u15",
+    "name": "Œuf à la coque",
+    "aliases": [
+      "oeuf",
+      "œuf",
+      "oeuf a la coque",
+      "œuf à la coque"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "œuf",
+    "unitKcal": 70,
+    "unitProtein": 6.0,
+    "kcal100": 155,
+    "protein100": 13.286,
+    "unitWeightG": 45.161,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u16",
+    "name": "Petit Fruité Yoplait",
+    "aliases": [
+      "petit fruite yoplait",
+      "petit fruité yoplait"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "pot",
+    "unitKcal": 42,
+    "unitProtein": 2.7,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u17",
+    "name": "Portion St Moret",
+    "aliases": [
+      "st moret",
+      "saint moret",
+      "portion st moret"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "portion",
+    "unitKcal": 45,
+    "unitProtein": 1.5,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u18",
+    "name": "Pot de riz au lait sur caramel",
+    "aliases": [
+      "riz au lait caramel",
+      "pot de riz au lait sur caramel"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "pot",
+    "unitKcal": 150,
+    "unitProtein": 3.7,
+    "kcal100": 130,
+    "protein100": 3.207,
+    "unitWeightG": 115.385,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u19",
+    "name": "Pot gâteau riz caramel",
+    "aliases": [
+      "pot gateau riz caramel",
+      "gateau de riz caramel"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "pot",
+    "unitKcal": 131,
+    "unitProtein": 3.4,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u20",
+    "name": "Petit suisse fruité",
+    "aliases": [
+      "pt suisse fruite",
+      "petit suisse fruite",
+      "petit suisse fruité"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "pot",
+    "unitKcal": 60,
+    "unitProtein": 3.0,
+    "kcal100": 95,
+    "protein100": 4.75,
+    "unitWeightG": 63.158,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u21",
+    "name": "Tartelette Pastel de Nata",
+    "aliases": [
+      "pastel de nata",
+      "tartelette pastel de nata"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "tartelette",
+    "unitKcal": 200,
+    "unitProtein": 3.5,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u22",
+    "name": "Tranche fromage Leerdammer",
+    "aliases": [
+      "leerdammer",
+      "tranche fromage leerdammer"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "tranche",
+    "unitKcal": 88,
+    "unitProtein": 6.5,
+    "kcal100": 350,
+    "protein100": 25.852,
+    "unitWeightG": 25.143,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u23",
+    "name": "Yaourt entier",
+    "aliases": [
+      "yaourt entier"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "pot",
+    "unitKcal": 118,
+    "unitProtein": 4.0,
+    "kcal100": 95,
+    "protein100": 3.22,
+    "unitWeightG": 124.211,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u24",
+    "name": "Beurre",
+    "aliases": [
+      "beurre"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "cuillère à café",
+    "unitKcal": 37,
+    "unitProtein": 0.0,
+    "kcal100": 750,
+    "protein100": 0.0,
+    "unitWeightG": 4.933,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u25",
+    "name": "Confiture",
+    "aliases": [
+      "confiture"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "cuillère à café",
+    "unitKcal": 17,
+    "unitProtein": 0.0,
+    "kcal100": 250,
+    "protein100": 0.0,
+    "unitWeightG": 6.8,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u26",
+    "name": "Miel",
+    "aliases": [
+      "miel"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "cuillère à café",
+    "unitKcal": 21,
+    "unitProtein": 0.0,
+    "kcal100": 320,
+    "protein100": 0.0,
+    "unitWeightG": 6.562,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u27",
+    "name": "Huile",
+    "aliases": [
+      "huile"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "cuillère à soupe",
+    "unitKcal": 110,
+    "unitProtein": 0.0,
+    "kcal100": 900,
+    "protein100": 0.0,
+    "unitWeightG": 12.222,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-u28",
+    "name": "Twix",
+    "aliases": [
+      "twix"
+    ],
+    "referenceMode": "perUnit",
+    "unitName": "barre",
+    "unitKcal": 99,
+    "unitProtein": 0.9,
+    "kcal100": null,
+    "protein100": null,
+    "unitWeightG": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true
+  },
+  {
+    "id": "import-20260909-g01",
+    "name": "Baguette",
+    "aliases": [
+      "baguette"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 270,
+    "protein100": 8.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 27,
+    "sourceProtein": 0.8
+  },
+  {
+    "id": "import-20260909-g02",
+    "name": "Chips Lay's cuites au four",
+    "aliases": [
+      "chipos lays cuite au four",
+      "chips lays cuite au four",
+      "chips lay's cuites au four"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 430,
+    "protein100": 7.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 43,
+    "sourceProtein": 0.7
+  },
+  {
+    "id": "import-20260909-g03",
+    "name": "Compote de pommes maison",
+    "aliases": [
+      "compotes de pommes maison",
+      "compote de pommes maison"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 80,
+    "protein100": 0.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 8,
+    "sourceProtein": 0.0
+  },
+  {
+    "id": "import-20260909-g04",
+    "name": "Crème entière",
+    "aliases": [
+      "creme entiere",
+      "crème entière"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 300,
+    "protein100": 2.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 30,
+    "sourceProtein": 0.2
+  },
+  {
+    "id": "import-20260909-g05",
+    "name": "Frites Actifree",
+    "aliases": [
+      "frites actifree"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 150,
+    "protein100": 3.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 15,
+    "sourceProtein": 0.3
+  },
+  {
+    "id": "import-20260909-g06",
+    "name": "Fromage blanc faisselle",
+    "aliases": [
+      "fromage blanc faisselle"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 76,
+    "protein100": 4.3,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 8,
+    "sourceProtein": 4.3
+  },
+  {
+    "id": "import-20260909-g07",
+    "name": "Fromage Brin de Paille",
+    "aliases": [
+      "fromage brin de paille",
+      "brin de paille"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 334,
+    "protein100": 16.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 34,
+    "sourceProtein": 1.6
+  },
+  {
+    "id": "import-20260909-g08",
+    "name": "Fromage Caprice des Dieux",
+    "aliases": [
+      "fromage caprice des dieux",
+      "caprice des dieux"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 300,
+    "protein100": 12.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 30,
+    "sourceProtein": 1.2
+  },
+  {
+    "id": "import-20260909-g09",
+    "name": "Fromage Emmental",
+    "aliases": [
+      "emmental",
+      "fromage emmental",
+      "fromage type emmental"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 400,
+    "protein100": 28.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 40,
+    "sourceProtein": 2.8
+  },
+  {
+    "id": "import-20260909-g10",
+    "name": "Fromage Gouda",
+    "aliases": [
+      "gouda",
+      "fromage gouda"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 360,
+    "protein100": 23.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 36,
+    "sourceProtein": 2.3
+  },
+  {
+    "id": "import-20260909-g11",
+    "name": "Fromage Loupérac",
+    "aliases": [
+      "louperac",
+      "loupérac",
+      "fromage louperac",
+      "fromage loupérac"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 305,
+    "protein100": 17.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 30,
+    "sourceProtein": 1.7
+  },
+  {
+    "id": "import-20260909-g12",
+    "name": "Fromage Pavé d'Affinois Gourmand",
+    "aliases": [
+      "pave d affinoy gourmand",
+      "pavé d'affinois gourmand",
+      "fromage pave d affinoy gourmand",
+      "fromage pavé d'affinois gourmand"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 312,
+    "protein100": 18.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 75,
+    "sourceProtein": 18.0
+  },
+  {
+    "id": "import-20260909-g13",
+    "name": "Fromage Roucouloux noix",
+    "aliases": [
+      "roucouloux noix",
+      "fromage roucouloux noix"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 345,
+    "protein100": 12.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 35,
+    "sourceProtein": 1.2
+  },
+  {
+    "id": "import-20260909-g14",
+    "name": "Gâteau apéro salés Belein",
+    "aliases": [
+      "gateau apero sales belein",
+      "gâteau apéro salés belein"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 518,
+    "protein100": 10.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 51,
+    "sourceProtein": 1.0
+  },
+  {
+    "id": "import-20260909-g15",
+    "name": "Gâteau yaourt maison",
+    "aliases": [
+      "gateau yaourt maison",
+      "gâteau yaourt maison"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 380,
+    "protein100": 6.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 38,
+    "sourceProtein": 0.6
+  },
+  {
+    "id": "import-20260909-g16",
+    "name": "Gruyère",
+    "aliases": [
+      "gruyere",
+      "gruyère"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 350,
+    "protein100": 28.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 35,
+    "sourceProtein": 2.8
+  },
+  {
+    "id": "import-20260909-g17",
+    "name": "Jambon blanc cuit",
+    "aliases": [
+      "jambon blanc",
+      "jambon blanc cuit"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 120,
+    "protein100": 20.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 12,
+    "sourceProtein": 2.0
+  },
+  {
+    "id": "import-20260909-g18",
+    "name": "Lardons grillés à la poêle",
+    "aliases": [
+      "lardons grilles a la poele",
+      "lardons grillés à la poêle"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 239,
+    "protein100": 16.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 24,
+    "sourceProtein": 16.0
+  },
+  {
+    "id": "import-20260909-g19",
+    "name": "Pâtes cuites",
+    "aliases": [
+      "pates cuites",
+      "pâtes cuites",
+      "pates",
+      "pâtes"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 130,
+    "protein100": 5.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 13,
+    "sourceProtein": 0.5
+  },
+  {
+    "id": "import-20260909-g20",
+    "name": "Pistaches",
+    "aliases": [
+      "pistache",
+      "pistaches"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 610,
+    "protein100": 20.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 61,
+    "sourceProtein": 2.0
+  },
+  {
+    "id": "import-20260909-g21",
+    "name": "Poulet cuisse",
+    "aliases": [
+      "poulet cuisse",
+      "cuisse de poulet"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 165,
+    "protein100": 26.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 16,
+    "sourceProtein": 2.6
+  },
+  {
+    "id": "import-20260909-g22",
+    "name": "Poulet escalope",
+    "aliases": [
+      "poulet escalope",
+      "escalope de poulet"
+    ],
+    "referenceMode": "per100g",
+    "kcal100": 110,
+    "protein100": 23.0,
+    "unitName": "",
+    "unitWeightG": null,
+    "unitKcal": null,
+    "unitProtein": null,
+    "packageWeightG": null,
+    "units": null,
+    "origin": "user-table-2026-09-09",
+    "seeded": true,
+    "sourceQuantity": "10 g",
+    "sourceKcal": 11,
+    "sourceProtein": 2.3
+  }
+];
+
+
 const defaultState = {
+  personalFoodSeedVersion: 0,
   profile: {
     setupDone: false,
     age: 73,
@@ -56,6 +1085,7 @@ const defaultState = {
 };
 
 let state = loadState();
+applyBundledPersonalFoodSeed();
 let selectedImageData = null;
 let currentAnalysis = null;
 let selectedDateKey = localDateKey();
@@ -96,6 +1126,67 @@ function escapeHtml(value = '') {
   return String(value).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
 }
 
+function migratePersonalFood(food = {}) {
+  const migrated = { ...food };
+  const packageWeightG = Number(migrated.packageWeightG || 0) || null;
+  const units = Number(migrated.units || 0) || null;
+  const derivedUnitWeight = packageWeightG && units ? packageWeightG / units : null;
+  migrated.referenceMode = migrated.referenceMode === 'perUnit' ? 'perUnit' : 'per100g';
+  migrated.unitName = String(migrated.unitName || '').trim();
+  migrated.unitWeightG = Number(migrated.unitWeightG || derivedUnitWeight || 0) || null;
+  if (migrated.referenceMode === 'perUnit') {
+    migrated.unitKcal = Number(migrated.unitKcal ?? migrated.kcalPerUnit ?? 0);
+    migrated.unitProtein = Number(migrated.unitProtein ?? migrated.proteinPerUnit ?? 0);
+    if (migrated.unitWeightG && (!Number.isFinite(Number(migrated.kcal100)) || Number(migrated.kcal100) <= 0)) {
+      migrated.kcal100 = migrated.unitKcal / migrated.unitWeightG * 100;
+    }
+    if (migrated.unitWeightG && (!Number.isFinite(Number(migrated.protein100)) || Number(migrated.protein100) < 0)) {
+      migrated.protein100 = migrated.unitProtein / migrated.unitWeightG * 100;
+    }
+  }
+  return migrated;
+}
+
+
+function normalizedFoodNames(food = {}) {
+  return [food.name, ...(Array.isArray(food.aliases) ? food.aliases : [])]
+    .map(normalizeFoodName)
+    .filter(Boolean);
+}
+
+function foodsOverlap(a = {}, b = {}) {
+  const aNames = new Set(normalizedFoodNames(a));
+  return normalizedFoodNames(b).some(name => aNames.has(name));
+}
+
+function generalFoodIsShadowed(key, food) {
+  const generalRef = { name: food.name, aliases: FOOD_ALIASES[key] || [] };
+  return (state?.personalFoods || []).some(personal => foodsOverlap(personal, generalRef));
+}
+
+function dedupedGeneralFoodEntries() {
+  return Object.entries(FOOD_DB).filter(([key, food]) => !generalFoodIsShadowed(key, food));
+}
+
+function applyBundledPersonalFoodSeed() {
+  const currentVersion = Number(state.personalFoodSeedVersion || 0);
+  if (currentVersion >= PERSONAL_FOOD_SEED_VERSION) return false;
+
+  let foods = Array.isArray(state.personalFoods) ? state.personalFoods.map(migratePersonalFood) : [];
+  for (const bundled of BUNDLED_PERSONAL_FOODS) {
+    foods = foods.filter(existing => !foodsOverlap(existing, bundled));
+    foods.push({
+      ...bundled,
+      createdAt: bundled.createdAt || '2026-09-09T00:00:00.000Z',
+      updatedAt: new Date().toISOString()
+    });
+  }
+  state.personalFoods = foods;
+  state.personalFoodSeedVersion = PERSONAL_FOOD_SEED_VERSION;
+  saveState();
+  return true;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -112,7 +1203,7 @@ function loadState() {
       },
       meals: Array.isArray(parsed.meals) ? parsed.meals : [],
       activities: Array.isArray(parsed.activities) ? parsed.activities : [],
-      personalFoods: Array.isArray(parsed.personalFoods) ? parsed.personalFoods : [],
+      personalFoods: Array.isArray(parsed.personalFoods) ? parsed.personalFoods.map(migratePersonalFood) : [],
       weights: weights.map(w => {
         const date = w.date || new Date().toISOString();
         return { ...w, id: w.id || makeId(), date, dateKey: w.dateKey || localDateKey(new Date(date)) };
@@ -379,21 +1470,13 @@ function findLocalFoodReference(name) {
   if (!wanted) return null;
 
   // Priorité 1 : références personnelles saisies par l'utilisateur.
-  const personal = (state.personalFoods || []).find(food => normalizeFoodName(food.name) === wanted);
-  if (personal) return { ...personal, key: `personal:${personal.id}`, dbType: 'personal' };
+  const personal = (state.personalFoods || []).find(food => normalizedFoodNames(food).includes(wanted));
+  if (personal) return { ...migratePersonalFood(personal), key: `personal:${personal.id}`, dbType: 'personal' };
 
   // Priorité 2 : petite base générale intégrée.
-  const aliases = {
-    apple: ['pomme'], banana: ['banane'], bread: ['pain'], carrot: ['carotte', 'carottes'],
-    cheese: ['fromage type emmental', 'emmental'], chicken: ['poulet', 'poulet cuit'], egg: ['oeuf', 'œuf'],
-    fries: ['frite', 'frites'], ham: ['jambon blanc'], pasta: ['pates', 'pâtes', 'pates cuites', 'pâtes cuites'],
-    potato: ['pomme de terre', 'pommes de terre', 'pommes de terre cuites'], rice: ['riz', 'riz cuit'],
-    salad: ['salade', 'salade verte'], salmon: ['saumon', 'saumon cuit'], steak: ['steak hache', 'steak haché'],
-    tuna: ['thon', 'thon au naturel'], watermelon: ['pasteque', 'pastèque'], yogurt: ['yaourt', 'yaourt nature']
-  };
   for (const [key, food] of Object.entries(FOOD_DB)) {
-    const candidates = [food.name, ...(aliases[key] || [])].map(normalizeFoodName);
-    if (candidates.includes(wanted)) return { ...food, key, dbType: 'general' };
+    const candidates = [food.name, ...(FOOD_ALIASES[key] || [])].map(normalizeFoodName);
+    if (candidates.includes(wanted)) return { ...food, key, dbType: 'general', referenceMode: 'per100g' };
   }
   return null;
 }
@@ -404,19 +1487,93 @@ function personalFoodById(id) {
 
 function manualFoodReference(selectKey) {
   if (!selectKey || selectKey === 'custom') return null;
-  if (selectKey.startsWith('personal:')) return personalFoodById(selectKey.slice('personal:'.length));
-  return FOOD_DB[selectKey] || null;
+  if (selectKey.startsWith('personal:')) {
+    const food = personalFoodById(selectKey.slice('personal:'.length));
+    return food ? { ...migratePersonalFood(food), key: selectKey, dbType: 'personal' } : null;
+  }
+  const food = FOOD_DB[selectKey];
+  return food ? { ...food, key: selectKey, dbType: 'general', referenceMode: 'per100g' } : null;
+}
+
+function pluralizeUnit(unitName, quantity) {
+  const unit = String(unitName || 'unité').trim() || 'unité';
+  if (Number(quantity) <= 1 || unit.endsWith('s')) return unit;
+  if (unit === 'œuf') return 'œufs';
+  if (unit === 'verre') return 'verres';
+  if (unit === 'part') return 'parts';
+  if (unit === 'pot') return 'pots';
+  if (unit === 'tranche') return 'tranches';
+  if (unit === 'cuillère à soupe') return 'cuillères à soupe';
+  if (unit === 'cuillère à café') return 'cuillères à café';
+  return `${unit}s`;
+}
+
+function foodReferenceQuantityMeta(food) {
+  if (!food) return { mode: 'grams', unitName: 'g' };
+  const referenceMode = food.referenceMode === 'perUnit' ? 'perUnit' : 'per100g';
+  let unitName = String(food.unitName || '').trim();
+  let unitWeightG = Number(food.unitWeightG || 0) || null;
+  // Une référence personnelle déjà saisie en /100 g peut réutiliser l'unité moyenne
+  // de la base générale (ex. Œuf, Banane, Pomme) sans perdre ses propres kcal/protéines.
+  if (referenceMode === 'per100g' && (!unitName || !unitWeightG) && (food.dbType === 'personal' || food.id)) {
+    const fallback = Object.values(FOOD_DB).find(item => normalizeFoodName(item.name) === normalizeFoodName(food.name));
+    if (fallback?.unitName && fallback?.unitWeightG) {
+      unitName = unitName || fallback.unitName;
+      unitWeightG = unitWeightG || Number(fallback.unitWeightG);
+    }
+  }
+  if (referenceMode === 'perUnit' && unitName) {
+    return {
+      mode: 'unit', unitName, unitWeightG,
+      unitKcal: Math.max(0, Number(food.unitKcal || 0)),
+      unitProtein: Math.max(0, Number(food.unitProtein || 0))
+    };
+  }
+  if (unitName && unitWeightG && Number.isFinite(Number(food.kcal100)) && Number.isFinite(Number(food.protein100))) {
+    return {
+      mode: 'unit', unitName, unitWeightG,
+      unitKcal: Math.max(0, Number(food.kcal100 || 0)) * unitWeightG / 100,
+      unitProtein: Math.max(0, Number(food.protein100 || 0)) * unitWeightG / 100
+    };
+  }
+  return {
+    mode: 'grams', unitName: 'g',
+    kcal100: Math.max(0, Number(food.kcal100 || 0)),
+    protein100: Math.max(0, Number(food.protein100 || 0))
+  };
 }
 
 function personalFoodMeta(food) {
+  const migrated = migratePersonalFood(food);
   const parts = [];
-  const packageWeightG = Number(food.packageWeightG || 0);
-  const units = Number(food.units || 0);
-  const unitName = String(food.unitName || 'unité').trim() || 'unité';
-  if (packageWeightG > 0) parts.push(`${round(packageWeightG, 1)} g le paquet`);
-  if (units > 0) parts.push(`${round(units, 1)} ${unitName}${units > 1 && !unitName.endsWith('s') ? 's' : ''}`);
-  if (packageWeightG > 0 && units > 0) parts.push(`1 ${unitName} ≈ ${round(packageWeightG / units, 1)} g`);
+  const meta = foodReferenceQuantityMeta(migrated);
+  if (migrated.referenceMode === 'perUnit') {
+    parts.push(`1 ${meta.unitName} = ${round(meta.unitKcal, 1)} kcal · ${round(meta.unitProtein, 1)} g prot.`);
+    if (meta.unitWeightG) parts.push(`≈ ${round(meta.unitWeightG, 1)} g`);
+    return parts.join(' · ');
+  }
+  parts.push(`${round(Number(migrated.kcal100 || 0), 1)} kcal · ${round(Number(migrated.protein100 || 0), 1)} g prot. / 100 g`);
+  if (meta.mode === 'unit') parts.push(`1 ${meta.unitName} ≈ ${round(meta.unitWeightG, 1)} g`);
+  const packageWeightG = Number(migrated.packageWeightG || 0);
+  const units = Number(migrated.units || 0);
+  if (packageWeightG > 0 && units > 0) parts.push(`${round(packageWeightG, 1)} g / ${round(units, 1)} unités`);
   return parts.join(' · ');
+}
+
+function niceUnitQuantity(raw) {
+  if (!Number.isFinite(raw) || raw <= 0) return 1;
+  return Math.max(0.5, Math.round(raw * 2) / 2);
+}
+
+function foodReferenceByKey(key) {
+  if (!key) return null;
+  if (key.startsWith('personal:')) return manualFoodReference(key);
+  if (key.startsWith('general:')) return manualFoodReference(key.slice('general:'.length));
+  return null;
+}
+
+function needsQuantityConfirmation(name = '') {
+  return /(huile|sauce|beurre|mayonnaise|vinaigrette|assaisonnement|crème|creme|matière grasse|matiere grasse|fromage)/i.test(name);
 }
 
 function prepareAnalysis(analysis) {
@@ -424,13 +1581,26 @@ function prepareAnalysis(analysis) {
     const grams = Math.max(1, Number(item.estimated_grams || 1));
     const calories = Math.max(0, Number(item.calories || 0));
     const protein = Math.max(0, Number(item.protein_g || 0));
+    const name = String(item.name || 'Aliment');
     return {
-      name: String(item.name || 'Aliment'),
+      name,
+      photoName: name,
       estimated_grams: grams,
+      photoEstimatedGrams: grams,
+      quantityMode: 'grams',
+      quantity: grams,
+      quantityUnit: 'g',
       calories,
       protein_g: protein,
       kcalPerGram: calories / grams,
       proteinPerGram: protein / grams,
+      photoKcalPerGram: calories / grams,
+      photoProteinPerGram: protein / grams,
+      kcalPerUnit: null,
+      proteinPerUnit: null,
+      unitWeightG: null,
+      referenceKey: 'photo',
+      customNameMode: false,
       nutritionSource: 'photo-ai',
       nutritionStatus: '',
       nutritionNote: '',
@@ -438,47 +1608,131 @@ function prepareAnalysis(analysis) {
       nutritionRequestId: 0
     };
   });
-  return { ...analysis, items, total_calories: items.reduce((s, i) => s + i.calories, 0), total_protein_g: items.reduce((s, i) => s + i.protein_g, 0) };
+  return { ...analysis, items, total_calories: items.reduce((sum, item) => sum + item.calories, 0), total_protein_g: items.reduce((sum, item) => sum + item.protein_g, 0) };
+}
+
+function sourceForReference(ref) {
+  return ref?.dbType === 'personal' ? 'personal-db' : 'local-db';
+}
+
+function referenceDisplayNote(ref) {
+  if (!ref) return '';
+  if (ref.dbType === 'personal') return `Ma base : ${personalFoodMeta(ref)}.`;
+  const meta = foodReferenceQuantityMeta(ref);
+  if (meta.mode === 'unit') return `Base générale : 1 ${meta.unitName} ≈ ${round(meta.unitWeightG, 1)} g · ${round(meta.unitKcal, 1)} kcal · ${round(meta.unitProtein, 1)} g prot.`;
+  return `Base générale : ${round(ref.kcal100, 1)} kcal et ${round(ref.protein100, 1)} g protéines / 100 g.`;
+}
+
+function applyFoodReference(index, ref, { preserveGrams = true } = {}) {
+  if (!currentAnalysis?.items?.[index] || !ref) return;
+  const item = currentAnalysis.items[index];
+  const previousGrams = Math.max(1, Number(item.estimated_grams || item.photoEstimatedGrams || 1));
+  const previousQuantity = Number(item.quantity || 0);
+  const previousMode = item.quantityMode;
+  const previousReferenceKey = item.referenceKey;
+  const meta = foodReferenceQuantityMeta(ref);
+  item.name = ref.name;
+  item.referenceKey = ref.dbType === 'personal' ? `personal:${ref.id}` : `general:${ref.key}`;
+  item.customNameMode = false;
+  item.nutritionSource = sourceForReference(ref);
+  item.nutritionStatus = ref.dbType === 'personal' ? 'Référence personnelle appliquée.' : 'Référence générale appliquée.';
+  item.nutritionNote = referenceDisplayNote(ref);
+  item.nutritionError = false;
+
+  if (meta.mode === 'unit') {
+    item.quantityMode = 'unit';
+    item.quantityUnit = meta.unitName;
+    item.unitWeightG = meta.unitWeightG || null;
+    item.kcalPerUnit = Number(meta.unitKcal || 0);
+    item.proteinPerUnit = Number(meta.unitProtein || 0);
+    let quantity = 1;
+    const nextReferenceKey = ref.dbType === 'personal' ? `personal:${ref.id}` : `general:${ref.key}`;
+    if (previousMode === 'unit' && previousQuantity > 0 && previousReferenceKey === nextReferenceKey) quantity = previousQuantity;
+    else if (preserveGrams && meta.unitWeightG) quantity = niceUnitQuantity(previousGrams / meta.unitWeightG);
+    item.quantity = quantity;
+    item.estimated_grams = meta.unitWeightG ? quantity * meta.unitWeightG : previousGrams;
+    item.calories = item.kcalPerUnit * quantity;
+    item.protein_g = item.proteinPerUnit * quantity;
+    item.kcalPerGram = meta.unitWeightG ? item.kcalPerUnit / meta.unitWeightG : 0;
+    item.proteinPerGram = meta.unitWeightG ? item.proteinPerUnit / meta.unitWeightG : 0;
+  } else {
+    const grams = preserveGrams ? previousGrams : Math.max(1, previousQuantity || 100);
+    item.quantityMode = 'grams';
+    item.quantityUnit = 'g';
+    item.quantity = grams;
+    item.estimated_grams = grams;
+    item.unitWeightG = null;
+    item.kcalPerUnit = null;
+    item.proteinPerUnit = null;
+    item.kcalPerGram = Number(meta.kcal100 || 0) / 100;
+    item.proteinPerGram = Number(meta.protein100 || 0) / 100;
+    item.calories = item.kcalPerGram * grams;
+    item.protein_g = item.proteinPerGram * grams;
+  }
 }
 
 function applyKnownNutritionReferences() {
   if (!currentAnalysis?.items) return;
   currentAnalysis.items.forEach((item, index) => {
     const local = findLocalFoodReference(item.name);
-    if (!local) return;
-    const source = local.dbType === 'personal' ? 'personal-db' : 'local-db';
-    const label = local.dbType === 'personal' ? 'Votre référence personnelle' : 'Référence locale';
-    const meta = local.dbType === 'personal' ? personalFoodMeta(local) : '';
-    applyNutritionReference(index, local.kcal100, local.protein100, source, `${label} : ${local.kcal100} kcal et ${local.protein100} g protéines / 100 g.${meta ? ` ${meta}.` : ''}`);
+    if (local) applyFoodReference(index, local, { preserveGrams: true });
   });
-}
-
-function needsQuantityConfirmation(name = '') {
-  return /(huile|sauce|beurre|mayonnaise|vinaigrette|assaisonnement|crème|creme|matière grasse|matiere grasse|fromage)/i.test(name);
 }
 
 function recalcAnalysisTotals() {
   if (!currentAnalysis) return;
-  currentAnalysis.total_calories = currentAnalysis.items.reduce((s, i) => s + Number(i.calories || 0), 0);
-  currentAnalysis.total_protein_g = currentAnalysis.items.reduce((s, i) => s + Number(i.protein_g || 0), 0);
+  currentAnalysis.total_calories = currentAnalysis.items.reduce((sum, item) => sum + Number(item.calories || 0), 0);
+  currentAnalysis.total_protein_g = currentAnalysis.items.reduce((sum, item) => sum + Number(item.protein_g || 0), 0);
   $('analysis-calories').textContent = Math.round(currentAnalysis.total_calories);
   $('analysis-protein').textContent = round(currentAnalysis.total_protein_g, 1);
-  const pending = currentAnalysis.items.some(i => i.nutritionStatus === 'loading');
-  const invalid = currentAnalysis.items.some(i => i.nutritionError);
+  const pending = currentAnalysis.items.some(item => item.nutritionStatus === 'loading');
+  const invalid = currentAnalysis.items.some(item => item.nutritionError);
   $('save-analysis').disabled = pending || invalid || !currentAnalysis.items.length;
 }
 
-function applyNutritionReference(index, kcal100, protein100, source, note = '') {
+function applyTextNutritionReference(index, kcal100, protein100, note = '') {
   if (!currentAnalysis?.items?.[index]) return;
   const item = currentAnalysis.items[index];
-  const grams = Math.max(1, Number(item.estimated_grams || 1));
+  const grams = Math.max(1, Number(item.estimated_grams || item.photoEstimatedGrams || 100));
+  item.quantityMode = 'grams';
+  item.quantityUnit = 'g';
+  item.quantity = grams;
+  item.estimated_grams = grams;
   item.kcalPerGram = Math.max(0, Number(kcal100 || 0)) / 100;
   item.proteinPerGram = Math.max(0, Number(protein100 || 0)) / 100;
+  item.kcalPerUnit = null;
+  item.proteinPerUnit = null;
+  item.unitWeightG = null;
   item.calories = item.kcalPerGram * grams;
   item.protein_g = item.proteinPerGram * grams;
-  item.nutritionSource = source;
-  item.nutritionStatus = source === 'personal-db' ? 'Recalculé avec votre base personnelle.' : source === 'local-db' ? 'Recalculé avec la base alimentaire.' : 'Recalculé pour le nouvel aliment.';
-  item.nutritionNote = String(note || '');
+  item.referenceKey = 'text-ai';
+  item.customNameMode = true;
+  item.nutritionSource = 'text-ai';
+  item.nutritionStatus = 'Recalculé pour le nouvel aliment.';
+  item.nutritionNote = String(note || 'Valeurs moyennes estimées pour 100 g.');
+  item.nutritionError = false;
+}
+
+function applyPhotoReference(index) {
+  if (!currentAnalysis?.items?.[index]) return;
+  const item = currentAnalysis.items[index];
+  item.name = item.photoName || item.name;
+  item.referenceKey = 'photo';
+  item.customNameMode = false;
+  item.quantityMode = 'grams';
+  item.quantityUnit = 'g';
+  item.quantity = Math.max(1, Number(item.photoEstimatedGrams || 1));
+  item.estimated_grams = item.quantity;
+  item.kcalPerGram = Number(item.photoKcalPerGram || 0);
+  item.proteinPerGram = Number(item.photoProteinPerGram || 0);
+  item.kcalPerUnit = null;
+  item.proteinPerUnit = null;
+  item.unitWeightG = null;
+  item.calories = item.kcalPerGram * item.quantity;
+  item.protein_g = item.proteinPerGram * item.quantity;
+  item.nutritionSource = 'photo-ai';
+  item.nutritionStatus = '';
+  item.nutritionNote = '';
   item.nutritionError = false;
 }
 
@@ -492,10 +1746,7 @@ async function recalculateNutritionForName(index) {
 
   const local = findLocalFoodReference(foodName);
   if (local) {
-    const source = local.dbType === 'personal' ? 'personal-db' : 'local-db';
-    const label = local.dbType === 'personal' ? 'Votre référence personnelle' : 'Référence locale';
-    const meta = local.dbType === 'personal' ? personalFoodMeta(local) : '';
-    applyNutritionReference(index, local.kcal100, local.protein100, source, `${label} : ${local.kcal100} kcal et ${local.protein100} g protéines / 100 g.${meta ? ` ${meta}.` : ''}`);
+    applyFoodReference(index, local, { preserveGrams: true });
     renderAnalysisEditor();
     return;
   }
@@ -517,24 +1768,32 @@ async function recalculateNutritionForName(index) {
     try { data = await response.json(); } catch {}
     if (!response.ok) throw new Error(data.error || `Erreur ${response.status}`);
     if (!currentAnalysis?.items?.[index] || currentAnalysis.items[index].nutritionRequestId !== requestId) return;
-    applyNutritionReference(index, data.kcal_per_100g, data.protein_per_100g, 'text-ai', data.notes || 'Valeurs moyennes estimées pour 100 g.');
+    applyTextNutritionReference(index, data.kcal_per_100g, data.protein_per_100g, data.notes || 'Valeurs moyennes estimées pour 100 g.');
   } catch (error) {
     if (!currentAnalysis?.items?.[index] || currentAnalysis.items[index].nutritionRequestId !== requestId) return;
     const current = currentAnalysis.items[index];
     current.nutritionStatus = 'error';
     current.nutritionError = true;
-    current.nutritionNote = `Recalcul impossible : ${error.message}. Corrigez le nom ou appuyez sur « Recalculer nutrition ».`;
+    current.nutritionNote = `Recalcul impossible : ${error.message}. Corrigez le nom ou appuyez sur « Recalculer ».`;
   }
   renderAnalysisEditor();
 }
 
-function updateAnalysisItemFromGrams(index, grams, rerender = false) {
+function updateAnalysisItemQuantity(index, quantity, rerender = false) {
   if (!currentAnalysis?.items?.[index]) return;
   const item = currentAnalysis.items[index];
-  const safeGrams = Math.max(1, Number(grams || 1));
-  item.estimated_grams = safeGrams;
-  item.calories = item.kcalPerGram * safeGrams;
-  item.protein_g = item.proteinPerGram * safeGrams;
+  const min = item.quantityMode === 'unit' ? 0.5 : 1;
+  const safeQuantity = Math.max(min, Number(quantity || min));
+  item.quantity = safeQuantity;
+  if (item.quantityMode === 'unit') {
+    item.calories = Number(item.kcalPerUnit || 0) * safeQuantity;
+    item.protein_g = Number(item.proteinPerUnit || 0) * safeQuantity;
+    if (item.unitWeightG) item.estimated_grams = safeQuantity * Number(item.unitWeightG);
+  } else {
+    item.estimated_grams = safeQuantity;
+    item.calories = Number(item.kcalPerGram || 0) * safeQuantity;
+    item.protein_g = Number(item.proteinPerGram || 0) * safeQuantity;
+  }
   if (rerender) renderAnalysisEditor();
   else refreshAnalysisRowNumbers(index);
 }
@@ -546,22 +1805,45 @@ function nutritionSourceLabel(item) {
   return '<span class="nutrition-chip ai">Luna · photo</span>';
 }
 
+function analysisFoodSelectHtml(item, index) {
+  const currentKey = item.customNameMode || item.referenceKey === 'text-ai' ? '__custom__' : (item.referenceKey || 'photo');
+  const personal = [...(state.personalFoods || [])].map(migratePersonalFood).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const general = dedupedGeneralFoodEntries().sort((a, b) => a[1].name.localeCompare(b[1].name, 'fr'));
+  const photoLabel = `Luna : ${item.photoName || item.name}`;
+  let html = `<select class="analysis-food-select" data-analysis-food-select="${index}" aria-label="Aliment"><option value="photo" ${currentKey === 'photo' ? 'selected' : ''}>${escapeHtml(photoLabel)}</option>`;
+  if (personal.length) {
+    html += '<optgroup label="Ma base personnelle">';
+    html += personal.map(food => `<option value="personal:${food.id}" ${currentKey === `personal:${food.id}` ? 'selected' : ''}>${escapeHtml(food.name)}</option>`).join('');
+    html += '</optgroup>';
+  }
+  html += '<optgroup label="Base générale">';
+  html += general.map(([key, food]) => `<option value="general:${key}" ${currentKey === `general:${key}` ? 'selected' : ''}>${escapeHtml(food.name)}</option>`).join('');
+  html += '</optgroup>';
+  html += `<option value="__custom__" ${currentKey === '__custom__' ? 'selected' : ''}>Autre aliment…</option></select>`;
+  if (currentKey === '__custom__') html += `<input class="analysis-custom-name-input" data-analysis-custom-name="${index}" type="text" value="${escapeHtml(item.name)}" placeholder="Nom de l’aliment" aria-label="Nom personnalisé" />`;
+  return html;
+}
+
+function quantityDisplayLabel(item) {
+  return item.quantityMode === 'unit' ? pluralizeUnit(item.quantityUnit, item.quantity) : 'g';
+}
+
 function renderAnalysisEditor() {
   if (!currentAnalysis) return;
   const rows = (currentAnalysis.items || []).map((item, index) => `
     <div class="analysis-table-row" data-analysis-index="${index}">
       <div class="analysis-cell analysis-food-cell" data-label="Aliment">
-        <input class="analysis-name-input" aria-label="Aliment" data-analysis-name="${index}" type="text" list="food-name-suggestions" value="${escapeHtml(item.name)}" />
+        <div class="analysis-food-control">${analysisFoodSelectHtml(item, index)}</div>
       </div>
-      <div class="analysis-cell analysis-weight-cell" data-label="Poids">
-        <div class="table-grams-input"><input aria-label="Poids en grammes" data-analysis-grams="${index}" type="number" inputmode="numeric" min="1" step="1" value="${Math.round(item.estimated_grams)}" /><span>g</span></div>
+      <div class="analysis-cell analysis-weight-cell" data-label="Quantité">
+        <div class="table-quantity-input"><input aria-label="Quantité" data-analysis-quantity="${index}" type="number" inputmode="decimal" min="${item.quantityMode === 'unit' ? '0.5' : '1'}" step="${item.quantityMode === 'unit' ? '0.5' : '1'}" value="${round(item.quantity, item.quantityMode === 'unit' ? 1 : 0)}" /><span data-analysis-unit="${index}">${escapeHtml(quantityDisplayLabel(item))}</span></div>
       </div>
       <div class="analysis-cell analysis-value-cell" data-label="kcal"><strong data-analysis-kcal="${index}">${Math.round(item.calories)}</strong><span>kcal</span></div>
       <div class="analysis-cell analysis-value-cell" data-label="Protéines"><strong data-analysis-protein="${index}">${round(item.protein_g, 1)}</strong><span>g</span></div>
       <div class="analysis-row-tools">
         <div class="analysis-flags">
           ${nutritionSourceLabel(item)}
-          ${needsQuantityConfirmation(item.name) ? '<span class="confirm-chip">Poids à confirmer</span>' : ''}
+          ${needsQuantityConfirmation(item.name) ? '<span class="confirm-chip">Quantité à confirmer</span>' : ''}
         </div>
         ${item.nutritionStatus === 'loading' ? '<div class="nutrition-message loading">Recalcul des calories et protéines…</div>' : ''}
         ${item.nutritionNote ? `<div class="nutrition-message ${item.nutritionError ? 'error' : ''}">${escapeHtml(item.nutritionNote)}</div>` : ''}
@@ -576,7 +1858,7 @@ function renderAnalysisEditor() {
     <div class="analysis-table" role="table" aria-label="Ingrédients estimés">
       <div class="analysis-table-header" role="row">
         <div role="columnheader">Aliment</div>
-        <div role="columnheader">Poids</div>
+        <div role="columnheader">Quantité</div>
         <div role="columnheader">kcal</div>
         <div role="columnheader">Protéines</div>
       </div>
@@ -590,8 +1872,10 @@ function refreshAnalysisRowNumbers(index) {
   const item = currentAnalysis.items[index];
   const kcal = document.querySelector(`[data-analysis-kcal="${index}"]`);
   const protein = document.querySelector(`[data-analysis-protein="${index}"]`);
+  const unit = document.querySelector(`[data-analysis-unit="${index}"]`);
   if (kcal) kcal.textContent = Math.round(item.calories);
   if (protein) protein.textContent = round(item.protein_g, 1);
+  if (unit) unit.textContent = quantityDisplayLabel(item);
   recalcAnalysisTotals();
 }
 
@@ -617,14 +1901,6 @@ function setupPhoto() {
   $('analyze-photo').addEventListener('click', analyzePhoto);
 
   $('analysis-items').addEventListener('click', event => {
-    const adjust = event.target.closest('[data-adjust-grams]');
-    if (adjust) {
-      const index = Number(adjust.dataset.adjustGrams);
-      const delta = Number(adjust.dataset.delta || 0);
-      const current = Number(currentAnalysis?.items?.[index]?.estimated_grams || 0);
-      updateAnalysisItemFromGrams(index, current + delta);
-      return;
-    }
     const recalc = event.target.closest('[data-recalc-nutrition]');
     if (recalc) {
       recalculateNutritionForName(Number(recalc.dataset.recalcNutrition));
@@ -638,22 +1914,46 @@ function setupPhoto() {
   });
 
   $('analysis-items').addEventListener('input', event => {
-    const gramsInput = event.target.closest('[data-analysis-grams]');
-    if (gramsInput) updateAnalysisItemFromGrams(Number(gramsInput.dataset.analysisGrams), Number(gramsInput.value));
+    const quantityInput = event.target.closest('[data-analysis-quantity]');
+    if (quantityInput) updateAnalysisItemQuantity(Number(quantityInput.dataset.analysisQuantity), Number(quantityInput.value));
   });
 
   $('analysis-items').addEventListener('change', event => {
-    const gramsInput = event.target.closest('[data-analysis-grams]');
-    if (gramsInput) return updateAnalysisItemFromGrams(Number(gramsInput.dataset.analysisGrams), Number(gramsInput.value));
-    const nameInput = event.target.closest('[data-analysis-name]');
-    if (nameInput && currentAnalysis?.items?.[Number(nameInput.dataset.analysisName)]) {
-      const index = Number(nameInput.dataset.analysisName);
+    const quantityInput = event.target.closest('[data-analysis-quantity]');
+    if (quantityInput) return updateAnalysisItemQuantity(Number(quantityInput.dataset.analysisQuantity), Number(quantityInput.value));
+
+    const foodSelect = event.target.closest('[data-analysis-food-select]');
+    if (foodSelect && currentAnalysis?.items?.[Number(foodSelect.dataset.analysisFoodSelect)]) {
+      const index = Number(foodSelect.dataset.analysisFoodSelect);
+      const value = foodSelect.value;
       const item = currentAnalysis.items[index];
-      const nextName = nameInput.value.trim() || 'Aliment';
-      const changed = normalizeFoodName(nextName) !== normalizeFoodName(item.name);
-      item.name = nextName;
-      if (changed) recalculateNutritionForName(index);
-      else renderAnalysisEditor();
+      if (value === 'photo') {
+        applyPhotoReference(index);
+        renderAnalysisEditor();
+        return;
+      }
+      if (value === '__custom__') {
+        item.customNameMode = true;
+        item.referenceKey = 'text-ai';
+        item.name = item.name || item.photoName || '';
+        renderAnalysisEditor();
+        setTimeout(() => document.querySelector(`[data-analysis-custom-name="${index}"]`)?.focus(), 0);
+        return;
+      }
+      const ref = foodReferenceByKey(value);
+      if (ref) {
+        applyFoodReference(index, ref, { preserveGrams: true });
+        renderAnalysisEditor();
+      }
+      return;
+    }
+
+    const customName = event.target.closest('[data-analysis-custom-name]');
+    if (customName && currentAnalysis?.items?.[Number(customName.dataset.analysisCustomName)]) {
+      const index = Number(customName.dataset.analysisCustomName);
+      const item = currentAnalysis.items[index];
+      item.name = customName.value.trim() || item.photoName || 'Aliment';
+      recalculateNutritionForName(index);
     }
   });
 
@@ -663,10 +1963,10 @@ function setupPhoto() {
     const dateKey = $('photo-date').value || selectedDateKey;
     addMeal({
       type: $('analysis-meal-type').value,
-      name: currentAnalysis.items.map(i => i.name).slice(0, 3).join(', ') || 'Repas analysé',
+      name: currentAnalysis.items.map(item => item.name).slice(0, 3).join(', ') || 'Repas analysé',
       calories: currentAnalysis.total_calories,
       protein: currentAnalysis.total_protein_g,
-      items: currentAnalysis.items.map(({ kcalPerGram, proteinPerGram, nutritionStatus, nutritionError, nutritionRequestId, ...item }) => item),
+      items: currentAnalysis.items.map(({ kcalPerGram, proteinPerGram, kcalPerUnit, proteinPerUnit, nutritionStatus, nutritionError, nutritionRequestId, photoKcalPerGram, photoProteinPerGram, ...item }) => item),
       source: 'photo-ai',
       dateKey
     });
@@ -714,7 +2014,7 @@ function populateFoodNameSuggestions() {
   if (!list) return;
   const names = [
     ...(state.personalFoods || []).map(food => food.name),
-    ...Object.values(FOOD_DB).map(food => food.name)
+    ...dedupedGeneralFoodEntries().map(([, food]) => food.name)
   ];
   const unique = [...new Set(names.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
   list.innerHTML = unique.map(name => `<option value="${escapeHtml(name)}"></option>`).join('');
@@ -742,7 +2042,7 @@ function populateManualFoodSelect(preferred = '') {
 
   const general = document.createElement('optgroup');
   general.label = 'Base générale';
-  Object.entries(FOOD_DB).sort((a, b) => a[1].name.localeCompare(b[1].name, 'fr')).forEach(([key, food]) => {
+  dedupedGeneralFoodEntries().sort((a, b) => a[1].name.localeCompare(b[1].name, 'fr')).forEach(([key, food]) => {
     const option = document.createElement('option');
     option.value = key;
     option.textContent = food.name;
@@ -758,28 +2058,56 @@ function populateManualFoodSelect(preferred = '') {
 }
 
 function setupManualEntry() {
+  let lastFoodKey = '';
   const updateManualFields = () => {
     const key = $('manual-food').value;
     const isCustom = key === 'custom';
     $('manual-custom-wrap').hidden = !isCustom;
     if (!key || isCustom) {
-      $('manual-reference').textContent = isCustom ? 'Pour un aliment personnalisé, saisissez les calories et protéines estimées.' : '';
-      if (isCustom) { $('manual-calories').value = ''; $('manual-protein').value = ''; }
+      $('manual-quantity-label').textContent = 'Quantité';
+      $('manual-quantity').disabled = isCustom;
+      if (isCustom) {
+        $('manual-quantity').value = '';
+        $('manual-reference').textContent = 'Pour un aliment personnalisé, saisissez directement les calories et protéines estimées.';
+        $('manual-calories').value = '';
+        $('manual-protein').value = '';
+      } else {
+        $('manual-reference').textContent = '';
+        $('manual-quantity').disabled = false;
+      }
+      lastFoodKey = key;
       return;
     }
+
     const food = manualFoodReference(key);
     if (!food) return;
-    const grams = Math.max(1, Number($('manual-grams').value || 100));
-    $('manual-grams').value = grams;
-    $('manual-calories').value = Math.round(food.kcal100 * grams / 100);
-    $('manual-protein').value = round(food.protein100 * grams / 100, 1);
+    const meta = foodReferenceQuantityMeta(food);
+    $('manual-quantity').disabled = false;
+    if (key !== lastFoodKey || !$('manual-quantity').value) {
+      $('manual-quantity').value = meta.mode === 'unit' ? 1 : 100;
+    }
+    $('manual-quantity').min = meta.mode === 'unit' ? '0.5' : '1';
+    $('manual-quantity').step = meta.mode === 'unit' ? '0.5' : '1';
+    $('manual-quantity-label').textContent = meta.mode === 'unit' ? `Quantité (${pluralizeUnit(meta.unitName, 2)})` : 'Quantité (g)';
+    const quantity = Math.max(meta.mode === 'unit' ? 0.5 : 1, Number($('manual-quantity').value || (meta.mode === 'unit' ? 1 : 100)));
+    if (meta.mode === 'unit') {
+      $('manual-calories').value = Math.round(Number(meta.unitKcal || 0) * quantity);
+      $('manual-protein').value = round(Number(meta.unitProtein || 0) * quantity, 1);
+    } else {
+      $('manual-calories').value = Math.round(Number(meta.kcal100 || 0) * quantity / 100);
+      $('manual-protein').value = round(Number(meta.protein100 || 0) * quantity / 100, 1);
+    }
     const personal = key.startsWith('personal:');
-    const meta = personal ? personalFoodMeta(food) : '';
-    $('manual-reference').textContent = `${personal ? 'Ma référence personnelle' : 'Référence'} : ${food.kcal100} kcal et ${food.protein100} g protéines / 100 g.${meta ? ` ${meta}.` : ' Valeurs indicatives.'}`;
+    $('manual-reference').textContent = personal ? `Ma base : ${personalFoodMeta(food)}.` : (meta.mode === 'unit' ? `Base générale : 1 ${meta.unitName} ≈ ${round(meta.unitWeightG, 1)} g · ${round(meta.unitKcal, 1)} kcal · ${round(meta.unitProtein, 1)} g prot.` : `Base générale : ${food.kcal100} kcal et ${food.protein100} g protéines / 100 g.`);
+    lastFoodKey = key;
   };
+
   populateManualFoodSelect();
   $('manual-food').addEventListener('change', updateManualFields);
-  $('manual-grams').addEventListener('input', () => { const key = $('manual-food').value; if (key && key !== 'custom') updateManualFields(); });
+  $('manual-quantity').addEventListener('input', () => {
+    const key = $('manual-food').value;
+    if (key && key !== 'custom') updateManualFields();
+  });
   $('save-manual').addEventListener('click', () => {
     const key = $('manual-food').value;
     if (!key) return alert('Choisissez un aliment dans le menu.');
@@ -790,9 +2118,32 @@ function setupManualEntry() {
     const protein = Number($('manual-protein').value || 0);
     const dateKey = $('manual-date').value || selectedDateKey;
     if (!Number.isFinite(calories) || calories < 0) return alert('Indiquez les calories à ajouter.');
-    addMeal({ type: $('manual-type').value, name, calories, protein, source: key.startsWith('personal:') ? 'manual-personal-db' : 'manual', dateKey });
-    $('manual-food').value = ''; $('manual-name').value = ''; $('manual-grams').value = ''; $('manual-calories').value = ''; $('manual-protein').value = '';
-    $('manual-custom-wrap').hidden = true; $('manual-reference').textContent = '';
+
+    let items = [];
+    if (food && key !== 'custom') {
+      const meta = foodReferenceQuantityMeta(food);
+      const quantity = Number($('manual-quantity').value || (meta.mode === 'unit' ? 1 : 100));
+      items = [{
+        name,
+        quantity,
+        quantityMode: meta.mode,
+        quantityUnit: meta.mode === 'unit' ? meta.unitName : 'g',
+        estimated_grams: meta.mode === 'unit' && meta.unitWeightG ? quantity * meta.unitWeightG : (meta.mode === 'grams' ? quantity : null),
+        calories,
+        protein_g: protein,
+        nutritionSource: key.startsWith('personal:') ? 'personal-db' : 'local-db'
+      }];
+    }
+
+    addMeal({ type: $('manual-type').value, name, calories, protein, items, source: key.startsWith('personal:') ? 'manual-personal-db' : 'manual', dateKey });
+    $('manual-food').value = '';
+    $('manual-name').value = '';
+    $('manual-quantity').value = '';
+    $('manual-calories').value = '';
+    $('manual-protein').value = '';
+    $('manual-custom-wrap').hidden = true;
+    $('manual-reference').textContent = '';
+    lastFoodKey = '';
     selectedDateKey = dateKey;
     showView('today');
   });
@@ -941,53 +2292,117 @@ function setupMealEditing() {
   $('meal-edit-dialog').addEventListener('cancel', () => { editingMealId = null; });
 }
 
+function updatePersonalFoodFormMode() {
+  const mode = $('personal-food-reference-mode').value || 'per100g';
+  $('personal-food-per100-fields').hidden = mode !== 'per100g';
+  $('personal-food-perunit-fields').hidden = mode !== 'perUnit';
+  const unitRequired = mode === 'perUnit';
+  $('personal-food-unit-name').placeholder = unitRequired ? 'Ex. œuf, Kiri, pot, c. à soupe, part' : 'Facultatif : ex. tranche, pot…';
+  updatePersonalFoodPackageHelper();
+}
+
+function updatePersonalFoodPackageHelper() {
+  const packageWeightG = Number(String($('personal-food-package-weight')?.value || '').replace(',', '.')) || 0;
+  const units = Number(String($('personal-food-units')?.value || '').replace(',', '.')) || 0;
+  const result = $('personal-food-package-result');
+  if (!result) return;
+  if (packageWeightG > 0 && units > 0) {
+    const weight = packageWeightG / units;
+    result.textContent = `Poids moyen calculé : ${round(weight, 1)} g par unité. Il sera utilisé si le champ « poids moyen » est vide.`;
+  } else result.textContent = '';
+}
+
 function clearPersonalFoodForm() {
   editingPersonalFoodId = null;
-  ['personal-food-name', 'personal-food-kcal100', 'personal-food-protein100', 'personal-food-package-weight', 'personal-food-units', 'personal-food-unit-name'].forEach(id => { if ($(id)) $(id).value = ''; });
+  ['personal-food-name', 'personal-food-kcal100', 'personal-food-protein100', 'personal-food-unit-name', 'personal-food-unit-weight', 'personal-food-unit-kcal', 'personal-food-unit-protein', 'personal-food-package-weight', 'personal-food-units'].forEach(id => { if ($(id)) $(id).value = ''; });
+  $('personal-food-reference-mode').value = 'per100g';
   $('save-personal-food').textContent = 'Ajouter à ma base';
   $('cancel-personal-food-edit').hidden = true;
   $('personal-food-form-status').textContent = '';
+  updatePersonalFoodFormMode();
 }
 
 function editPersonalFood(id) {
-  const food = personalFoodById(id);
-  if (!food) return;
+  const raw = personalFoodById(id);
+  if (!raw) return;
+  const food = migratePersonalFood(raw);
   editingPersonalFoodId = id;
   $('personal-food-name').value = food.name || '';
-  $('personal-food-kcal100').value = food.kcal100 ?? '';
-  $('personal-food-protein100').value = food.protein100 ?? '';
+  $('personal-food-reference-mode').value = food.referenceMode || 'per100g';
+  $('personal-food-kcal100').value = Number.isFinite(Number(food.kcal100)) ? round(food.kcal100, 2) : '';
+  $('personal-food-protein100').value = Number.isFinite(Number(food.protein100)) ? round(food.protein100, 2) : '';
+  $('personal-food-unit-name').value = food.unitName || '';
+  $('personal-food-unit-weight').value = food.unitWeightG || '';
+  $('personal-food-unit-kcal').value = food.referenceMode === 'perUnit' ? round(food.unitKcal || 0, 2) : '';
+  $('personal-food-unit-protein').value = food.referenceMode === 'perUnit' ? round(food.unitProtein || 0, 2) : '';
   $('personal-food-package-weight').value = food.packageWeightG || '';
   $('personal-food-units').value = food.units || '';
-  $('personal-food-unit-name').value = food.unitName || '';
   $('save-personal-food').textContent = 'Enregistrer la modification';
   $('cancel-personal-food-edit').hidden = false;
   $('personal-food-form-status').textContent = `Modification de « ${food.name} ».`;
+  updatePersonalFoodFormMode();
   $('personal-food-name').focus();
 }
 
 function savePersonalFoodReference() {
   const name = $('personal-food-name').value.trim();
-  const kcal100 = Number(String($('personal-food-kcal100').value).replace(',', '.'));
-  const protein100 = Number(String($('personal-food-protein100').value).replace(',', '.'));
+  const referenceMode = $('personal-food-reference-mode').value === 'perUnit' ? 'perUnit' : 'per100g';
+  let kcal100 = Number(String($('personal-food-kcal100').value || '').replace(',', '.'));
+  let protein100 = Number(String($('personal-food-protein100').value || '').replace(',', '.'));
+  const unitName = $('personal-food-unit-name').value.trim();
+  let unitWeightG = Number(String($('personal-food-unit-weight').value || '').replace(',', '.')) || null;
+  const unitKcal = Number(String($('personal-food-unit-kcal').value || '').replace(',', '.'));
+  const unitProtein = Number(String($('personal-food-unit-protein').value || '').replace(',', '.'));
   const packageWeightG = Number(String($('personal-food-package-weight').value || '').replace(',', '.')) || null;
   const units = Number(String($('personal-food-units').value || '').replace(',', '.')) || null;
-  const unitName = $('personal-food-unit-name').value.trim();
+
   if (!name) return alert('Indiquez le nom du produit ou de l’aliment.');
-  if (!Number.isFinite(kcal100) || kcal100 < 0) return alert('Indiquez les kcal pour 100 g.');
-  if (!Number.isFinite(protein100) || protein100 < 0) return alert('Indiquez les protéines pour 100 g.');
   if (packageWeightG !== null && packageWeightG <= 0) return alert('Le poids du paquet doit être supérieur à 0.');
   if (units !== null && units <= 0) return alert('Le nombre d’unités doit être supérieur à 0.');
+  if (!unitWeightG && packageWeightG && units) unitWeightG = packageWeightG / units;
+
+  if (referenceMode === 'per100g') {
+    if (!Number.isFinite(kcal100) || kcal100 < 0) return alert('Indiquez les kcal pour 100 g.');
+    if (!Number.isFinite(protein100) || protein100 < 0) return alert('Indiquez les protéines pour 100 g.');
+    if (unitWeightG && !unitName) return alert('Indiquez le nom de l’unité si vous renseignez un poids moyen par unité.');
+  } else {
+    if (!unitName) return alert('Indiquez le nom de l’unité ou de la portion (œuf, Kiri, pot, part…).');
+    if (!Number.isFinite(unitKcal) || unitKcal < 0) return alert('Indiquez les kcal pour 1 unité / portion.');
+    if (!Number.isFinite(unitProtein) || unitProtein < 0) return alert('Indiquez les protéines pour 1 unité / portion.');
+    if (unitWeightG) {
+      kcal100 = unitKcal / unitWeightG * 100;
+      protein100 = unitProtein / unitWeightG * 100;
+    } else {
+      kcal100 = null;
+      protein100 = null;
+    }
+  }
 
   state.personalFoods = Array.isArray(state.personalFoods) ? state.personalFoods : [];
   const duplicate = state.personalFoods.find(food => normalizeFoodName(food.name) === normalizeFoodName(name) && food.id !== editingPersonalFoodId);
   if (duplicate && !confirm(`Une référence « ${duplicate.name} » existe déjà. Ajouter quand même une nouvelle référence ?`)) return;
 
   const now = new Date().toISOString();
+  const record = {
+    name,
+    referenceMode,
+    kcal100: Number.isFinite(Number(kcal100)) ? Number(kcal100) : null,
+    protein100: Number.isFinite(Number(protein100)) ? Number(protein100) : null,
+    unitName,
+    unitWeightG,
+    unitKcal: referenceMode === 'perUnit' ? unitKcal : null,
+    unitProtein: referenceMode === 'perUnit' ? unitProtein : null,
+    packageWeightG,
+    units,
+    updatedAt: now,
+    origin: 'label-user',
+    aliases: editingPersonalFoodId ? (personalFoodById(editingPersonalFoodId)?.aliases || []) : []
+  };
   if (editingPersonalFoodId) {
     const index = state.personalFoods.findIndex(food => food.id === editingPersonalFoodId);
-    if (index >= 0) state.personalFoods[index] = { ...state.personalFoods[index], name, kcal100, protein100, packageWeightG, units, unitName, updatedAt: now };
+    if (index >= 0) state.personalFoods[index] = { ...state.personalFoods[index], ...record };
   } else {
-    state.personalFoods.push({ id: makeId(), name, kcal100, protein100, packageWeightG, units, unitName, createdAt: now, updatedAt: now, origin: 'label-user' });
+    state.personalFoods.push({ id: makeId(), ...record, createdAt: now });
   }
   saveState();
   clearPersonalFoodForm();
@@ -1009,33 +2424,35 @@ function deletePersonalFood(id) {
 function renderLocalFoodDb() {
   const personalEl = $('personal-food-list');
   if (personalEl) {
-    const foods = [...(state.personalFoods || [])].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    const foods = [...(state.personalFoods || [])].map(migratePersonalFood).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     personalEl.innerHTML = foods.length ? foods.map(food => `
       <div class="personal-food-row">
         <div class="personal-food-main">
           <strong>${escapeHtml(food.name)}</strong>
-          <span>${round(food.kcal100, 1)} kcal · ${round(food.protein100, 1)} g prot. / 100 g</span>
+          <span>${food.referenceMode === 'perUnit' ? `1 ${escapeHtml(food.unitName || 'unité')} = ${round(food.unitKcal || 0, 1)} kcal · ${round(food.unitProtein || 0, 1)} g prot.` : `${round(food.kcal100 || 0, 1)} kcal · ${round(food.protein100 || 0, 1)} g prot. / 100 g`}</span>
           ${personalFoodMeta(food) ? `<small>${escapeHtml(personalFoodMeta(food))}</small>` : ''}
         </div>
         <div class="personal-food-actions">
           <button type="button" data-edit-personal-food="${food.id}">Modifier</button>
           <button type="button" class="danger-link" data-delete-personal-food="${food.id}">Supprimer</button>
         </div>
-      </div>`).join('') : '<div class="empty-state">Aucune référence personnelle. Ajoutez directement les valeurs indiquées sur vos emballages.</div>';
+      </div>`).join('') : '<div class="empty-state">Aucune référence personnelle. Ajoutez vos aliments en choisissant « pour 100 g » ou « par unité / portion ».</div>';
   }
 
   const el = $('food-db-list');
   if (!el) return;
-  const foods = Object.values(FOOD_DB).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  el.innerHTML = `<div class="food-db-head"><span>Aliment</span><span>kcal/100 g</span><span>Prot./100 g</span></div>` + foods.map(food => `
-    <div class="food-db-row">
-      <span>${escapeHtml(food.name)}</span>
-      <strong>${round(food.kcal100, 1)}</strong>
-      <strong>${round(food.protein100, 1)} g</strong>
-    </div>`).join('');
+  const foods = dedupedGeneralFoodEntries().map(([, food]) => food).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  el.innerHTML = `<div class="food-db-head"><span>Aliment</span><span>Référence</span><span>Protéines</span></div>` + foods.map(food => {
+    const meta = foodReferenceQuantityMeta({ ...food, referenceMode: 'per100g' });
+    const ref = meta.mode === 'unit' ? `1 ${meta.unitName} ≈ ${round(meta.unitWeightG, 0)} g` : `${round(food.kcal100, 1)} kcal/100 g`;
+    const protein = meta.mode === 'unit' ? `${round(meta.unitProtein, 1)} g / ${meta.unitName}` : `${round(food.protein100, 1)} g/100 g`;
+    return `<div class="food-db-row"><span>${escapeHtml(food.name)}</span><strong>${escapeHtml(ref)}</strong><strong>${escapeHtml(protein)}</strong></div>`;
+  }).join('');
 }
 
 function setupPersonalFoodDb() {
+  $('personal-food-reference-mode').addEventListener('change', updatePersonalFoodFormMode);
+  ['personal-food-package-weight', 'personal-food-units'].forEach(id => $(id).addEventListener('input', updatePersonalFoodPackageHelper));
   $('save-personal-food').addEventListener('click', savePersonalFoodReference);
   $('cancel-personal-food-edit').addEventListener('click', clearPersonalFoodForm);
   $('personal-food-list').addEventListener('click', event => {
@@ -1044,6 +2461,7 @@ function setupPersonalFoodDb() {
     const del = event.target.closest('[data-delete-personal-food]');
     if (del) return deletePersonalFood(del.dataset.deletePersonalFood);
   });
+  updatePersonalFoodFormMode();
 }
 
 function deleteWholeDay(key) {
@@ -1253,7 +2671,7 @@ function setupSettings() {
     alert('Journal effacé. Votre base alimentaire personnelle est conservée.');
   });
   $('reset-data').addEventListener('click', () => {
-    if (!confirm('Réinitialiser complètement l’application ?\n\nCette action effacera aussi votre base alimentaire personnelle, votre profil et vos réglages.')) return;
+    if (!confirm('Réinitialiser complètement l’application ?\n\nLe journal, le profil, les réglages et les références personnelles ajoutées seront effacés. Les références intégrées du tableau V1.10 seront restaurées au redémarrage.')) return;
     localStorage.removeItem(STORAGE_KEY); state = structuredClone(defaultState); location.reload();
   });
 }
