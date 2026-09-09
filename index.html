@@ -17,7 +17,7 @@
       <div class="eyebrow">SUIVI NUTRITION</div>
       <h1>Calories</h1>
     </div>
-    <div class="version">V1.10</div>
+    <div class="version">V1.11</div>
   </header>
 
   <main id="app" class="app-shell">
@@ -325,9 +325,9 @@
       </div>
       <div class="help-list">
         <details open><summary>Analyser un repas par photo</summary><p>Choisissez une photo ou prenez-la avec la tablette. Luna identifie les aliments et propose des quantités, calories et protéines. Le résultat reste une estimation visuelle.</p></details>
-        <details><summary>Corriger une estimation</summary><p>Si le nom reconnu est faux, corrigez-le : Calories recalcule alors une nouvelle référence kcal/protéines pour cet aliment, sans conserver celle de l’aliment initial. L’application cherche d’abord dans votre base personnelle, puis dans la base générale. Luna n’est appelé pour un recalcul texte que si aucune référence locale ne correspond. Ensuite, une modification des grammes recalcule proportionnellement les valeurs. Le repas ne peut pas être validé tant qu’un recalcul demandé a échoué.</p></details>
+        <details><summary>Corriger une estimation</summary><p>Si le nom reconnu est faux, choisissez une référence de votre base. Si l’aliment n’existe pas, choisissez « ➕ Nouvel aliment… » : vous pouvez saisir son nom et ses valeurs nutritionnelles directement sous la ligne, l’ajouter immédiatement à votre base personnelle et poursuivre le repas sans passer par Réglages. Calories recalcule alors kcal et protéines avec cette nouvelle référence. « ↻ Recalculer » permet toujours de demander une estimation Luna si nécessaire.</p></details>
         <details><summary>Ajouter manuellement</summary><p>Le menu propose d’abord les références de votre base personnelle, puis la base générale. La quantité s’exprime automatiquement dans l’unité de l’aliment (œuf, pot, tranche, part…) ou en grammes. Les calories/protéines se recalculent immédiatement. Pour un aliment ponctuel absent, utilisez « Autre aliment ».</p></details>
-        <details><summary>Ajouter un produit à ma base locale</summary><p>Dans Réglages → Base alimentaire locale, choisissez une référence « pour 100 g » ou « par unité / portion ». Vous pouvez ainsi enregistrer 1 œuf, 1 Kiri, 1 pot, 1 part ou 1 cuillère, tandis que riz, pâtes ou pommes de terre peuvent rester en grammes. Votre base personnelle est consultée avant Luna.</p></details>
+        <details><summary>Ajouter un produit à ma base locale</summary><p>Vous pouvez toujours ajouter une référence dans Réglages → Base alimentaire locale. Mais pendant la correction d’un repas, un aliment absent peut désormais être créé directement dans la ligne : référence « pour 100 g » ou « par unité / portion », kcal, protéines et poids moyen facultatif. La nouvelle référence est enregistrée dans votre base personnelle et utilisée immédiatement.</p></details>
         <details><summary>Calories et protéines</summary><p>Les calories des repas s’additionnent. Les calories dépensées par une activité sont déduites du bilan calorique net. Les protéines consommées s’additionnent et ne sont jamais déduites par le sport.</p></details>
         <details><summary>Ajouter une activité</summary><p>Choisissez l’activité, puis sa source dans le menu proposé. La source habituelle peut être définie dans Réglages (par exemple Vélo → eFlow, Marche → Samsung Health, Vélo appart → David Douillet). Saisissez ensuite les kcal fournies par cette application ou cet appareil : Calories ne les ré-estime pas.</p></details>
         <details><summary>Comprendre le bilan net</summary><p>Bilan net = calories alimentaires − calories d’activité. Le graphe est vert jusqu’à l’objectif et rouge uniquement pour la partie qui dépasse l’objectif.</p></details>

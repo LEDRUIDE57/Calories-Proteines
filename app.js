@@ -1634,6 +1634,7 @@ function applyFoodReference(index, ref, { preserveGrams = true } = {}) {
   item.name = ref.name;
   item.referenceKey = ref.dbType === 'personal' ? `personal:${ref.id}` : `general:${ref.key}`;
   item.customNameMode = false;
+  item.inlineBaseDraft = null;
   item.nutritionSource = sourceForReference(ref);
   item.nutritionStatus = ref.dbType === 'personal' ? 'Référence personnelle appliquée.' : 'Référence générale appliquée.';
   item.nutritionNote = referenceDisplayNote(ref);
@@ -1711,6 +1712,12 @@ function applyTextNutritionReference(index, kcal100, protein100, note = '') {
   item.nutritionStatus = 'Recalculé pour le nouvel aliment.';
   item.nutritionNote = String(note || 'Valeurs moyennes estimées pour 100 g.');
   item.nutritionError = false;
+  item.inlineBaseDraft = {
+    ...(item.inlineBaseDraft || {}),
+    referenceMode: 'per100g',
+    kcal100: round(Math.max(0, Number(kcal100 || 0)), 1),
+    protein100: round(Math.max(0, Number(protein100 || 0)), 1)
+  };
 }
 
 function applyPhotoReference(index) {
@@ -1719,6 +1726,7 @@ function applyPhotoReference(index) {
   item.name = item.photoName || item.name;
   item.referenceKey = 'photo';
   item.customNameMode = false;
+  item.inlineBaseDraft = null;
   item.quantityMode = 'grams';
   item.quantityUnit = 'g';
   item.quantity = Math.max(1, Number(item.photoEstimatedGrams || 1));
@@ -1806,7 +1814,7 @@ function nutritionSourceLabel(item) {
 }
 
 function analysisFoodSelectHtml(item, index) {
-  const currentKey = item.customNameMode || item.referenceKey === 'text-ai' ? '__custom__' : (item.referenceKey || 'photo');
+  const currentKey = item.customNameMode || item.referenceKey === 'text-ai' || item.referenceKey === 'custom-pending' ? '__custom__' : (item.referenceKey || 'photo');
   const personal = [...(state.personalFoods || [])].map(migratePersonalFood).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   const general = dedupedGeneralFoodEntries().sort((a, b) => a[1].name.localeCompare(b[1].name, 'fr'));
   const photoLabel = `Luna : ${item.photoName || item.name}`;
@@ -1819,9 +1827,128 @@ function analysisFoodSelectHtml(item, index) {
   html += '<optgroup label="Base générale">';
   html += general.map(([key, food]) => `<option value="general:${key}" ${currentKey === `general:${key}` ? 'selected' : ''}>${escapeHtml(food.name)}</option>`).join('');
   html += '</optgroup>';
-  html += `<option value="__custom__" ${currentKey === '__custom__' ? 'selected' : ''}>Autre aliment…</option></select>`;
-  if (currentKey === '__custom__') html += `<input class="analysis-custom-name-input" data-analysis-custom-name="${index}" type="text" value="${escapeHtml(item.name)}" placeholder="Nom de l’aliment" aria-label="Nom personnalisé" />`;
+  html += `<option value="__custom__" ${currentKey === '__custom__' ? 'selected' : ''}>➕ Nouvel aliment…</option></select>`;
+  if (currentKey === '__custom__') html += `<input class="analysis-custom-name-input" data-analysis-custom-name="${index}" type="text" value="${escapeHtml(item.name)}" placeholder="Nom du nouvel aliment" aria-label="Nom personnalisé" />`;
   return html;
+}
+
+function ensureInlineBaseDraft(item) {
+  if (!item.inlineBaseDraft) item.inlineBaseDraft = {};
+  const draft = item.inlineBaseDraft;
+  draft.referenceMode = draft.referenceMode === 'perUnit' ? 'perUnit' : 'per100g';
+  if (draft.kcal100 === undefined && item.nutritionSource === 'text-ai' && Number(item.kcalPerGram) >= 0) draft.kcal100 = round(Number(item.kcalPerGram || 0) * 100, 1);
+  if (draft.protein100 === undefined && item.nutritionSource === 'text-ai' && Number(item.proteinPerGram) >= 0) draft.protein100 = round(Number(item.proteinPerGram || 0) * 100, 1);
+  return draft;
+}
+
+function inlinePersonalFoodFormHtml(item, index) {
+  if (!(item.customNameMode || item.referenceKey === 'text-ai' || item.referenceKey === 'custom-pending')) return '';
+  const draft = ensureInlineBaseDraft(item);
+  const perUnit = draft.referenceMode === 'perUnit';
+  const val = (key) => draft[key] === undefined || draft[key] === null ? '' : escapeHtml(draft[key]);
+  return `
+    <div class="analysis-inline-base" data-inline-base="${index}">
+      <div class="inline-base-title"><strong>Ajouter directement à ma base</strong><span>Sans quitter le repas</span></div>
+      <div class="inline-base-grid">
+        <label>Référence
+          <select data-inline-food-field="referenceMode" data-inline-food-index="${index}">
+            <option value="per100g" ${!perUnit ? 'selected' : ''}>Pour 100 g</option>
+            <option value="perUnit" ${perUnit ? 'selected' : ''}>Par unité / portion</option>
+          </select>
+        </label>
+        <label class="inline-per100" ${perUnit ? 'hidden' : ''}>kcal / 100 g
+          <input data-inline-food-field="kcal100" data-inline-food-index="${index}" type="number" inputmode="decimal" min="0" step="0.1" value="${val('kcal100')}" placeholder="Ex. 250" />
+        </label>
+        <label class="inline-per100" ${perUnit ? 'hidden' : ''}>Protéines / 100 g
+          <input data-inline-food-field="protein100" data-inline-food-index="${index}" type="number" inputmode="decimal" min="0" step="0.1" value="${val('protein100')}" placeholder="Ex. 12" />
+        </label>
+        <label class="inline-perunit" ${!perUnit ? 'hidden' : ''}>Unité / portion
+          <input data-inline-food-field="unitName" data-inline-food-index="${index}" type="text" value="${val('unitName')}" placeholder="Ex. Kiri, œuf, pot, verre 25 cl" />
+        </label>
+        <label class="inline-perunit" ${!perUnit ? 'hidden' : ''}>kcal / unité
+          <input data-inline-food-field="unitKcal" data-inline-food-index="${index}" type="number" inputmode="decimal" min="0" step="0.1" value="${val('unitKcal')}" placeholder="Ex. 60" />
+        </label>
+        <label class="inline-perunit" ${!perUnit ? 'hidden' : ''}>Protéines / unité
+          <input data-inline-food-field="unitProtein" data-inline-food-index="${index}" type="number" inputmode="decimal" min="0" step="0.1" value="${val('unitProtein')}" placeholder="Ex. 3" />
+        </label>
+        <label class="inline-perunit" ${!perUnit ? 'hidden' : ''}>Poids moyen (g) — facultatif
+          <input data-inline-food-field="unitWeightG" data-inline-food-index="${index}" type="number" inputmode="decimal" min="0" step="0.1" value="${val('unitWeightG')}" placeholder="Ex. 18" />
+        </label>
+      </div>
+      <div class="inline-base-actions">
+        <button type="button" class="button primary" data-save-inline-food="${index}">Ajouter à ma base et utiliser</button>
+        <span class="muted small">« ↻ Recalculer » reste disponible si vous préférez une estimation Luna.</span>
+      </div>
+    </div>`;
+}
+
+function saveInlinePersonalFood(index) {
+  if (!currentAnalysis?.items?.[index]) return;
+  const item = currentAnalysis.items[index];
+  const name = String(item.name || '').trim();
+  if (!name) return alert('Indiquez le nom du nouvel aliment.');
+
+  const existing = findLocalFoodReference(name);
+  if (existing) {
+    applyFoodReference(index, existing, { preserveGrams: true });
+    renderAnalysisEditor();
+    return;
+  }
+
+  const draft = ensureInlineBaseDraft(item);
+  const referenceMode = draft.referenceMode === 'perUnit' ? 'perUnit' : 'per100g';
+  const num = key => {
+    const raw = String(draft[key] ?? '').replace(',', '.').trim();
+    return raw === '' ? NaN : Number(raw);
+  };
+  let kcal100 = num('kcal100');
+  let protein100 = num('protein100');
+  const unitName = String(draft.unitName || '').trim();
+  const unitWeightG = Number.isFinite(num('unitWeightG')) && num('unitWeightG') > 0 ? num('unitWeightG') : null;
+  const unitKcal = num('unitKcal');
+  const unitProtein = num('unitProtein');
+
+  if (referenceMode === 'per100g') {
+    if (!Number.isFinite(kcal100) || kcal100 < 0) return alert('Indiquez les kcal pour 100 g.');
+    if (!Number.isFinite(protein100) || protein100 < 0) return alert('Indiquez les protéines pour 100 g.');
+  } else {
+    if (!unitName) return alert('Indiquez l’unité ou la portion (œuf, Kiri, pot, verre…).');
+    if (!Number.isFinite(unitKcal) || unitKcal < 0) return alert('Indiquez les kcal pour 1 unité / portion.');
+    if (!Number.isFinite(unitProtein) || unitProtein < 0) return alert('Indiquez les protéines pour 1 unité / portion.');
+    if (unitWeightG) {
+      kcal100 = unitKcal / unitWeightG * 100;
+      protein100 = unitProtein / unitWeightG * 100;
+    } else {
+      kcal100 = null;
+      protein100 = null;
+    }
+  }
+
+  const now = new Date().toISOString();
+  const record = {
+    id: makeId(),
+    name,
+    referenceMode,
+    kcal100: Number.isFinite(Number(kcal100)) ? Number(kcal100) : null,
+    protein100: Number.isFinite(Number(protein100)) ? Number(protein100) : null,
+    unitName: referenceMode === 'perUnit' ? unitName : '',
+    unitWeightG,
+    unitKcal: referenceMode === 'perUnit' ? unitKcal : null,
+    unitProtein: referenceMode === 'perUnit' ? unitProtein : null,
+    packageWeightG: null,
+    units: null,
+    createdAt: now,
+    updatedAt: now,
+    origin: 'inline-correction',
+    aliases: []
+  };
+  state.personalFoods = Array.isArray(state.personalFoods) ? state.personalFoods : [];
+  state.personalFoods.push(record);
+  saveState();
+  populateManualFoodSelect();
+  renderLocalFoodDb();
+  applyFoodReference(index, { ...record, dbType: 'personal', key: `personal:${record.id}` }, { preserveGrams: true });
+  renderAnalysisEditor();
 }
 
 function quantityDisplayLabel(item) {
@@ -1847,6 +1974,7 @@ function renderAnalysisEditor() {
         </div>
         ${item.nutritionStatus === 'loading' ? '<div class="nutrition-message loading">Recalcul des calories et protéines…</div>' : ''}
         ${item.nutritionNote ? `<div class="nutrition-message ${item.nutritionError ? 'error' : ''}">${escapeHtml(item.nutritionNote)}</div>` : ''}
+        ${inlinePersonalFoodFormHtml(item, index)}
         <div class="analysis-row-actions">
           <button type="button" class="recalc-nutrition" data-recalc-nutrition="${index}" ${item.nutritionStatus === 'loading' ? 'disabled' : ''}>↻ Recalculer</button>
           <button type="button" class="remove-analysis-item" data-remove-analysis="${index}">Retirer</button>
@@ -1901,6 +2029,11 @@ function setupPhoto() {
   $('analyze-photo').addEventListener('click', analyzePhoto);
 
   $('analysis-items').addEventListener('click', event => {
+    const saveInline = event.target.closest('[data-save-inline-food]');
+    if (saveInline) {
+      saveInlinePersonalFood(Number(saveInline.dataset.saveInlineFood));
+      return;
+    }
     const recalc = event.target.closest('[data-recalc-nutrition]');
     if (recalc) {
       recalculateNutritionForName(Number(recalc.dataset.recalcNutrition));
@@ -1915,12 +2048,41 @@ function setupPhoto() {
 
   $('analysis-items').addEventListener('input', event => {
     const quantityInput = event.target.closest('[data-analysis-quantity]');
-    if (quantityInput) updateAnalysisItemQuantity(Number(quantityInput.dataset.analysisQuantity), Number(quantityInput.value));
+    if (quantityInput) {
+      updateAnalysisItemQuantity(Number(quantityInput.dataset.analysisQuantity), Number(quantityInput.value));
+      return;
+    }
+    const inlineField = event.target.closest('[data-inline-food-field]');
+    if (inlineField && currentAnalysis?.items?.[Number(inlineField.dataset.inlineFoodIndex)]) {
+      const item = currentAnalysis.items[Number(inlineField.dataset.inlineFoodIndex)];
+      const draft = ensureInlineBaseDraft(item);
+      draft[inlineField.dataset.inlineFoodField] = inlineField.value;
+    }
+    const customName = event.target.closest('[data-analysis-custom-name]');
+    if (customName && currentAnalysis?.items?.[Number(customName.dataset.analysisCustomName)]) {
+      const item = currentAnalysis.items[Number(customName.dataset.analysisCustomName)];
+      item.name = customName.value.trim();
+      item.referenceKey = 'custom-pending';
+      item.customNameMode = true;
+      item.nutritionError = true;
+      item.nutritionStatus = '';
+      item.nutritionNote = 'Nouvel aliment : ajoutez sa référence ci-dessous à votre base ou utilisez « ↻ Recalculer » pour demander une estimation Luna.';
+      recalcAnalysisTotals();
+    }
   });
 
   $('analysis-items').addEventListener('change', event => {
     const quantityInput = event.target.closest('[data-analysis-quantity]');
     if (quantityInput) return updateAnalysisItemQuantity(Number(quantityInput.dataset.analysisQuantity), Number(quantityInput.value));
+
+    const inlineField = event.target.closest('[data-inline-food-field]');
+    if (inlineField && currentAnalysis?.items?.[Number(inlineField.dataset.inlineFoodIndex)]) {
+      const item = currentAnalysis.items[Number(inlineField.dataset.inlineFoodIndex)];
+      const draft = ensureInlineBaseDraft(item);
+      draft[inlineField.dataset.inlineFoodField] = inlineField.value;
+      if (inlineField.dataset.inlineFoodField === 'referenceMode') renderAnalysisEditor();
+      return;
+    }
 
     const foodSelect = event.target.closest('[data-analysis-food-select]');
     if (foodSelect && currentAnalysis?.items?.[Number(foodSelect.dataset.analysisFoodSelect)]) {
@@ -1934,8 +2096,12 @@ function setupPhoto() {
       }
       if (value === '__custom__') {
         item.customNameMode = true;
-        item.referenceKey = 'text-ai';
+        item.referenceKey = 'custom-pending';
         item.name = item.name || item.photoName || '';
+        item.inlineBaseDraft = item.inlineBaseDraft || { referenceMode: 'per100g' };
+        item.nutritionStatus = '';
+        item.nutritionError = true;
+        item.nutritionNote = 'Nouvel aliment : ajoutez sa référence ci-dessous à votre base ou utilisez « ↻ Recalculer » pour demander une estimation Luna.';
         renderAnalysisEditor();
         setTimeout(() => document.querySelector(`[data-analysis-custom-name="${index}"]`)?.focus(), 0);
         return;
@@ -1953,7 +2119,18 @@ function setupPhoto() {
       const index = Number(customName.dataset.analysisCustomName);
       const item = currentAnalysis.items[index];
       item.name = customName.value.trim() || item.photoName || 'Aliment';
-      recalculateNutritionForName(index);
+      const local = findLocalFoodReference(item.name);
+      if (local) {
+        applyFoodReference(index, local, { preserveGrams: true });
+        renderAnalysisEditor();
+      } else {
+        item.referenceKey = 'custom-pending';
+        item.customNameMode = true;
+        item.nutritionError = true;
+        item.nutritionStatus = '';
+        item.nutritionNote = 'Aliment absent des bases : complétez la référence ci-dessous ou utilisez « ↻ Recalculer » avec Luna.';
+        renderAnalysisEditor();
+      }
     }
   });
 
@@ -1966,7 +2143,7 @@ function setupPhoto() {
       name: currentAnalysis.items.map(item => item.name).slice(0, 3).join(', ') || 'Repas analysé',
       calories: currentAnalysis.total_calories,
       protein: currentAnalysis.total_protein_g,
-      items: currentAnalysis.items.map(({ kcalPerGram, proteinPerGram, kcalPerUnit, proteinPerUnit, nutritionStatus, nutritionError, nutritionRequestId, photoKcalPerGram, photoProteinPerGram, ...item }) => item),
+      items: currentAnalysis.items.map(({ kcalPerGram, proteinPerGram, kcalPerUnit, proteinPerUnit, nutritionStatus, nutritionError, nutritionRequestId, photoKcalPerGram, photoProteinPerGram, inlineBaseDraft, ...item }) => item),
       source: 'photo-ai',
       dateKey
     });
@@ -2671,7 +2848,7 @@ function setupSettings() {
     alert('Journal effacé. Votre base alimentaire personnelle est conservée.');
   });
   $('reset-data').addEventListener('click', () => {
-    if (!confirm('Réinitialiser complètement l’application ?\n\nLe journal, le profil, les réglages et les références personnelles ajoutées seront effacés. Les références intégrées du tableau V1.10 seront restaurées au redémarrage.')) return;
+    if (!confirm('Réinitialiser complètement l’application ?\n\nLe journal, le profil, les réglages et les références personnelles ajoutées seront effacés. Les références intégrées du tableau seront restaurées au redémarrage.')) return;
     localStorage.removeItem(STORAGE_KEY); state = structuredClone(defaultState); location.reload();
   });
 }

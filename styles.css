@@ -251,3 +251,26 @@ dialog{border:0;border-radius:24px;padding:0;width:min(92vw,560px);box-shadow:0 
   .table-quantity-input input{font-size:13px;padding:7px 5px;min-height:40px}
   .table-quantity-input span{font-size:10px;max-width:66px}
 }
+
+/* V1.11 — création d'une référence locale directement depuis la correction */
+.analysis-inline-base{flex-basis:100%;width:100%;margin:4px 0 2px;padding:12px;border:1px solid #c9e5d5;border-radius:13px;background:#f5fbf7}
+.inline-base-title{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:9px}
+.inline-base-title strong{font-size:13px;color:var(--green)}
+.inline-base-title span{font-size:11px;color:var(--muted);font-weight:700}
+.inline-base-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.inline-base-grid label{display:grid;gap:4px;font-size:11px;color:var(--muted);font-weight:750}
+.inline-base-grid input,.inline-base-grid select{width:100%;min-height:40px;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff;color:inherit;font:inherit;font-weight:700}
+.inline-base-grid [hidden]{display:none!important}
+.inline-base-actions{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}
+.inline-base-actions .button{min-height:42px;padding:9px 13px}
+.inline-base-actions .muted{flex:1;min-width:180px}
+@media (max-width:650px){
+  .analysis-inline-base{padding:10px 8px}
+  .inline-base-title{align-items:flex-start;flex-direction:column;gap:2px}
+  .inline-base-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .inline-base-actions{display:grid;grid-template-columns:1fr}
+  .inline-base-actions .button{width:100%}
+}
+@media (max-width:430px){
+  .inline-base-grid{grid-template-columns:1fr}
+}
