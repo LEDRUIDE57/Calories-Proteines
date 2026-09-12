@@ -1,590 +1,204 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#1f6f4a" />
-  <meta name="description" content="Suivi quotidien des calories, protéines, activité et poids avec analyse photo assistée par IA." />
-  <title>Calories</title>
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" href="./icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-  <link rel="stylesheet" href="./styles.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#17324d">
+  <meta name="color-scheme" content="light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Yamaha GPX">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="description" content="Simulateur Batterie GPX Yamaha - Mode Standard V1">
+  <meta name="application-name" content="Simulateur Batterie GPX Yamaha">
+  <title>Simulateur Batterie GPX Yamaha</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
+  <header class="app-header">
     <div>
-      <div class="eyebrow">SUIVI NUTRITION</div>
-      <h1>Calories</h1>
+      <div class="eyebrow">YAMAHA · VTTAE · MODE STANDARD V1</div>
+      <h1>Simulateur Batterie GPX Yamaha</h1>
     </div>
-    <div class="version">V1.12</div>
+    <div class="header-badges">
+      <div class="platform-pill">iPhone · iOS</div>
+      <div class="version-pill" id="appVersion">V1.2.2</div>
+      <div class="status-pill" id="appStatus">Prêt</div>
+    </div>
   </header>
 
-  <main id="app" class="app-shell">
-    <section id="view-today" class="view active" aria-labelledby="today-title">
-      <div class="section-title-row">
-        <div>
-          <h2 id="today-title">Aujourd’hui</h2>
-          <p id="today-date" class="muted"></p>
-        </div>
-        <button id="quick-add" class="button secondary compact">+ Ajouter</button>
-      </div>
-      <div class="day-nav" aria-label="Navigation entre les journées">
-        <button id="day-prev" class="button secondary compact">← Jour précédent</button>
-        <button id="day-today" class="button secondary compact">Aujourd’hui</button>
-        <button id="day-next" class="button secondary compact">Jour suivant →</button>
-      </div>
-      <div class="selected-date-row">
-        <label>Date affichée
-          <input id="dashboard-date" type="date" />
-        </label>
-        <button id="delete-day" class="button danger compact">Supprimer la journée</button>
-      </div>
+  <nav class="tabs" aria-label="Navigation principale">
+    <button class="tab active" data-screen="gpx">GPX</button>
+    <button class="tab" data-screen="settings">Paramètres</button>
+    <button class="tab" data-screen="results">Résultats</button>
+  </nav>
 
+  <main>
+    <section id="screen-gpx" class="screen active">
       <div class="hero-card">
-        <div class="hero-label">Calories alimentaires</div>
-        <div class="hero-value"><span id="cal-consumed">0</span> <small>kcal</small></div>
-        <div class="progress"><div id="cal-progress" class="progress-bar"></div></div>
-        <div class="metric-row">
-          <span>Objectif net <strong id="cal-target">—</strong></span>
-          <span>Reste <strong id="cal-remaining">—</strong></span>
+        <div>
+          <div class="section-kicker">PARCOURS YAMAHA</div>
+          <h2>Charger un fichier GPX</h2>
+          <p>Le GPX est traité localement dans le navigateur. Aucune donnée du parcours n'est envoyée sur Internet.</p>
         </div>
-        <div class="net-line">
-          <span>Sport <strong id="activity-deducted">−0 kcal</strong></span>
-          <span>Bilan net <strong id="net-calories">0 kcal</strong></span>
-        </div>
+        <label class="primary-button file-button">
+          Choisir un GPX
+          <input id="gpxInput" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" hidden>
+        </label>
       </div>
 
-      <div class="protein-card">
-        <div class="card-heading">
-          <div>
-            <span class="card-kicker">PROTÉINES</span>
-            <div class="protein-value"><span id="protein-consumed">0</span> g <span class="muted">/ <span id="protein-target">—</span> g</span></div>
-          </div>
-          <div id="protein-percent" class="pill">0 %</div>
-        </div>
-        <div class="progress protein"><div id="protein-progress" class="progress-bar"></div></div>
-        <div class="metric-row"><span>Reste</span><strong id="protein-remaining">—</strong></div>
+      <div id="iosInstallNotice" class="notice ios-install hidden" role="status">
+        <strong>Installation iPhone :</strong> ouvre ce site dans Safari, touche <strong>Partager</strong> puis <strong>Sur l’écran d’accueil</strong>. Sur iOS 26 ou plus récent, laisse <strong>Ouvrir comme app web</strong> activé.
+      </div>
+      <div id="iosAppNotice" class="notice ios-app-active hidden" role="status">
+        <strong>Mode application iPhone actif.</strong> Le simulateur peut être utilisé depuis l’écran d’accueil, y compris hors connexion après un premier chargement en ligne.
       </div>
 
-      <div class="panel energy-panel">
-        <div class="panel-title-row">
-          <div>
-            <h3>Bilan calorique du jour</h3>
-            <p class="muted small panel-subtitle">La colonne représente le bilan net après déduction du sport.</p>
+      <div id="gpxEmpty" class="empty-state">
+        <div class="empty-icon">⌁</div>
+        <h3>Aucun parcours chargé</h3>
+        <p>Choisis un fichier <strong>.gpx</strong> contenant une trace et des altitudes.</p>
+      </div>
+
+      <div id="gpxLoaded" class="hidden">
+        <div class="card">
+          <div class="card-title-row">
+            <div>
+              <div class="section-kicker">FICHIER CHARGÉ</div>
+              <h2 id="fileName">—</h2>
+            </div>
+            <button id="reanalyzeBtn" class="secondary-button">Recalculer</button>
           </div>
+          <div class="metrics four" id="gpxMetrics"></div>
         </div>
-        <div class="energy-summary">
-          <div><span>Alimentaire</span><strong id="chart-food-calories">0 kcal</strong></div>
-          <div><span>Sport</span><strong id="chart-activity-calories">−0 kcal</strong></div>
-          <div><span>Net</span><strong id="chart-net-calories">0 kcal</strong></div>
+        <div id="gpxWarning" class="notice warning hidden"></div>
+        <div class="notice">
+          Le calcul produit toujours <strong>deux scénarios séparés</strong> : 1) sans recharge ; 2) avec plein à 100 % au kilomètre calculé automatiquement.
         </div>
-        <div class="energy-chart-wrap" aria-label="Graphique du bilan calorique">
-          <div class="energy-scale-label" id="energy-scale-max">—</div>
-          <div class="energy-chart-area">
-            <div id="energy-target-line" class="energy-target-line"><span id="energy-target-label">Objectif —</span></div>
-            <div class="energy-column" aria-hidden="true">
-              <div id="energy-green" class="energy-segment green"></div>
-              <div id="energy-red" class="energy-segment red"></div>
+      </div>
+    </section>
+
+    <section id="screen-settings" class="screen">
+      <div class="card">
+        <div class="card-title-row">
+          <div>
+            <div class="section-kicker">RÉGLAGES YAMAHA</div>
+            <h2>Paramètres du simulateur</h2>
+          </div>
+          <button id="resetSettingsBtn" class="secondary-button danger-lite">Valeurs Yamaha / Excel V1</button>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-group active-settings">
+            <h3>Batterie et découpage</h3>
+            <label>Capacité batterie <span>Wh</span><input data-setting="batteryCapacityWh" type="number" min="1" step="1"></label>
+            <label>Longueur tronçon <span>km</span><input data-setting="segmentLengthKm" type="number" min="0.01" step="0.1"></label>
+            <label>Seuil alerte graphique <span>Wh</span><input data-setting="batteryCriticalWh" type="number" min="0" step="1"></label>
+          </div>
+
+          <div class="settings-group active-settings">
+            <h3>Modes d'assistance</h3>
+            <label>Seuil Turbo <span>m D+ / tronçon</span><input data-setting="turboElevationThresholdM" type="number" min="0" step="1"></label>
+            <label>Vitesse Tour <span>km/h</span><input data-setting="tourSpeedKmh" type="number" min="0.1" step="0.1"></label>
+            <label>Vitesse Turbo <span>km/h</span><input data-setting="turboSpeedKmh" type="number" min="0.1" step="0.1"></label>
+          </div>
+
+          <div class="settings-group active-settings">
+            <h3>Consommation</h3>
+            <label>Conso Turbo <span>Wh/km</span><input data-setting="turboConsumptionWhPerKm" type="number" min="0" step="0.1"></label>
+            <label>Conso Tour <span>Wh/km</span><input data-setting="toursConsumptionWhPerKm" type="number" min="0" step="0.1"></label>
+            <label>Coefficient montée <span>Wh/m</span><input data-setting="climbCoefficientWhPerM" type="number" min="0" step="0.01"></label>
+            <label>Correction moteur <span>×</span><input data-setting="motorCorrection" type="number" min="0.0001" step="0.0001"></label>
+          </div>
+
+          <div class="settings-group recharge-settings">
+            <h3>Recharge déjeuner</h3>
+            <label>Capacité de recharge <span>Wh</span><input data-setting="rechargeWh" type="number" min="0" step="1"></label>
+            <div class="settings-note">
+              Référence Yamaha V1 : <strong>200 Wh</strong>. L'application place automatiquement la recharge au point où cette énergie consommée permet de refaire le plein à <strong>100 %</strong>. Si moins de 200 Wh sont consommés sur tout le parcours, le plein est placé à l'arrivée avec seulement l'énergie nécessaire.
             </div>
           </div>
-          <div class="energy-zero">0</div>
-        </div>
-        <div class="energy-legend">
-          <span><i class="legend-dot green"></i> Dans l’objectif</span>
-          <span><i class="legend-dot red"></i> Dépassement</span>
-        </div>
-      </div>
 
-      <div class="panel activity-panel">
-        <div class="panel-title-row">
-          <div>
-            <h3>Déduire une activité</h3>
-            <p class="muted small panel-subtitle">Ex. vélo, marche ou autre dépense sportive.</p>
-          </div>
-        </div>
-        <div class="activity-form">
-          <label>Date
-            <input id="activity-date" type="date" />
-          </label>
-          <label>Activité
-            <select id="activity-type">
-              <option>Course</option>
-              <option>Gym</option>
-              <option>Machine musculation</option>
-              <option>Marche</option>
-              <option>Natation</option>
-              <option>Randonnée</option>
-              <option selected>Vélo</option>
-              <option>Vélo appart</option>
-              <option value="Autre">Autre</option>
-            </select>
-          </label>
-          <label id="activity-custom-wrap" hidden>Nom de l’activité
-            <input id="activity-custom-name" type="text" placeholder="Ex. rameur" />
-          </label>
-          <label>Calories dépensées
-            <input id="activity-calories" type="number" inputmode="numeric" min="1" step="1" placeholder="kcal" />
-          </label>
-          <label>Source
-            <select id="activity-source"></select>
-          </label>
-          <label id="activity-source-custom-wrap" hidden>Autre source
-            <input id="activity-source-custom" type="text" placeholder="Nom de l’application ou appareil" />
-          </label>
-          <button id="save-activity" class="button secondary activity-save">Déduire</button>
-        </div>
-        <p class="muted small activity-note">Saisissez les kcal fournies par votre application ou appareil. Calories ne les ré-estime pas. Les protéines ne sont pas diminuées.</p>
-        <div id="today-activities" class="activity-list empty-state">Aucune activité déduite aujourd’hui.</div>
-      </div>
-
-      <div class="grid-two">
-        <div class="stat-card">
-          <span class="stat-label">Besoin maintien</span>
-          <strong id="maintenance-cal">—</strong>
-          <span class="stat-unit">kcal/j</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Écart maintien net</span>
-          <strong id="maintenance-gap">—</strong>
-          <span class="stat-unit">kcal</span>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-title-row">
-          <h3>Repas de la journée</h3>
-          <span id="meal-count" class="muted"></span>
-        </div>
-        <div id="today-meals" class="meal-list empty-state">Aucun repas enregistré.</div>
-      </div>
-    </section>
-
-    <section id="view-photo" class="view" aria-labelledby="photo-title">
-      <h2 id="photo-title">Photo du repas</h2>
-      <p class="muted">Prenez une photo ou choisissez-en une dans la galerie.</p>
-      <label class="date-field">Date du repas
-        <input id="photo-date" type="date" />
-      </label>
-
-      <div class="photo-drop">
-        <div id="photo-placeholder">
-          <div class="camera-icon">📷</div>
-          <strong>Ajouter une photo du repas</strong>
-          <span>Choisissez la source ci-dessous.</span>
-        </div>
-        <img id="photo-preview" alt="Aperçu du repas" hidden />
-      </div>
-
-      <div class="photo-actions">
-        <label class="button primary photo-source" for="camera-input">📷 Prendre une photo</label>
-        <input id="camera-input" type="file" accept="image/*" capture="environment" hidden />
-        <label class="button secondary photo-source" for="gallery-input">🖼️ Choisir dans la galerie</label>
-        <input id="gallery-input" type="file" accept="image/*" hidden />
-      </div>
-
-      <button id="analyze-photo" class="button primary full" disabled>Analyser calories + protéines</button>
-      <div id="analysis-status" class="notice" hidden></div>
-
-      <div id="analysis-panel" class="panel" hidden>
-        <div class="panel-title-row">
-          <div>
-            <h3>Estimation à corriger</h3>
-            <p class="muted small panel-subtitle">Contrôlez les 4 colonnes. Choisissez l’aliment dans votre base puis corrigez la quantité dans son unité naturelle (œuf, pot, tranche, part, cuillère…) ou en grammes. Les kcal et protéines se recalculent immédiatement.</p>
-          </div>
-          <span id="analysis-confidence" class="pill neutral"></span>
-        </div>
-        <div id="analysis-items"></div>
-        <div class="analysis-total">
-          <span>Total recalculé</span>
-          <strong><span id="analysis-calories">0</span> kcal · <span id="analysis-protein">0</span> g protéines</strong>
-        </div>
-        <p id="analysis-note" class="muted small"></p>
-        <label>Type de repas
-          <select id="analysis-meal-type">
-            <option>Petit-déjeuner</option>
-            <option selected>Déjeuner</option>
-            <option>Dîner</option>
-            <option>Collation</option>
-            <option>Autre</option>
-          </select>
-        </label>
-        <button id="save-analysis" class="button primary full">Ajouter à ma journée</button>
-      </div>
-
-      <div class="separator"><span>ou</span></div>
-
-      <div class="panel">
-        <h3>Ajout manuel rapide</h3>
-        <div class="form-grid">
-          <label>Date
-            <input id="manual-date" type="date" />
-          </label>
-          <label>Repas
-            <select id="manual-type">
-              <option>Petit-déjeuner</option>
-              <option selected>Déjeuner</option>
-              <option>Dîner</option>
-              <option>Collation</option>
-              <option>Autre</option>
-            </select>
-          </label>
-          <label>Aliment
-            <select id="manual-food">
-              <option value="">Choisir un aliment…</option>
-              <option value="banana">Banane</option>
-              <option value="carrot">Carottes</option>
-              <option value="cheese">Fromage type emmental</option>
-              <option value="fries">Frites</option>
-              <option value="ham">Jambon blanc</option>
-              <option value="egg">Œuf</option>
-              <option value="bread">Pain</option>
-              <option value="watermelon">Pastèque</option>
-              <option value="pasta">Pâtes cuites</option>
-              <option value="apple">Pomme</option>
-              <option value="potato">Pommes de terre cuites</option>
-              <option value="chicken">Poulet cuit</option>
-              <option value="rice">Riz cuit</option>
-              <option value="salad">Salade verte</option>
-              <option value="salmon">Saumon cuit</option>
-              <option value="steak">Steak haché</option>
-              <option value="tuna">Thon au naturel</option>
-              <option value="yogurt">Yaourt nature</option>
-              <option value="custom">Autre aliment…</option>
-            </select>
-          </label>
-          <label id="manual-custom-wrap" hidden>Nom de l’aliment
-            <input id="manual-name" type="text" placeholder="Ex. quiche maison" />
-          </label>
-          <label><span id="manual-quantity-label">Quantité (g)</span>
-            <input id="manual-quantity" type="number" inputmode="decimal" min="1" step="1" placeholder="100" />
-          </label>
-          <label>Calories
-            <input id="manual-calories" type="number" inputmode="numeric" min="0" placeholder="kcal" />
-          </label>
-          <label>Protéines
-            <input id="manual-protein" type="number" inputmode="decimal" min="0" step="0.1" placeholder="g" />
-          </label>
-        </div>
-        <p id="manual-reference" class="muted small"></p>
-        <button id="save-manual" class="button secondary full">Ajouter</button>
-      </div>
-    </section>
-
-    <section id="view-history" class="view" aria-labelledby="history-title">
-      <h2 id="history-title">Historique</h2>
-      <div id="history-summary" class="panel"></div>
-      <div class="panel">
-        <div class="panel-title-row">
-          <div>
-            <h3>Historique des activités</h3>
-            <p class="muted small panel-subtitle">Date, activité, source et kcal enregistrées.</p>
-          </div>
-        </div>
-        <div id="activity-history-list" class="activity-history-list"></div>
-      </div>
-      <div id="history-list"></div>
-    </section>
-
-    <section id="view-weight" class="view" aria-labelledby="weight-title">
-      <h2 id="weight-title">Poids</h2>
-      <div class="hero-card weight-hero">
-        <div class="hero-label">Dernier poids</div>
-        <div class="hero-value"><span id="weight-current">74.0</span> <small>kg</small></div>
-        <div class="metric-row">
-          <span>Départ <strong id="weight-start">74.0 kg</strong></span>
-          <span>Objectif <strong id="weight-goal">72.5 kg</strong></span>
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Enregistrer un poids</h3>
-        <div class="weight-form">
-          <label>Date
-            <input id="weight-date" type="date" />
-          </label>
-          <label>Poids (kg)
-            <input id="weight-input" type="number" inputmode="decimal" min="30" max="250" step="0.1" placeholder="73,8" />
-          </label>
-          <button id="save-weight" class="button primary">Enregistrer</button>
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Évolution</h3>
-        <canvas id="weight-chart" height="210"></canvas>
-        <div id="weight-empty" class="empty-state">Ajoutez au moins deux mesures pour afficher la tendance.</div>
-      </div>
-      <div id="weight-log" class="panel"></div>
-    </section>
-
-
-    <section id="view-help" class="view" aria-labelledby="help-title">
-      <h2 id="help-title">Aide</h2>
-      <div class="help-intro">
-        <strong>Principe de fonctionnement</strong>
-        <p>Photo → estimation IA → correction si nécessaire → validation → cumul de la journée.</p>
-      </div>
-      <div class="help-list">
-        <details open><summary>Analyser un repas par photo</summary><p>Choisissez une photo ou prenez-la avec la tablette. Luna identifie les aliments et propose des quantités, calories et protéines. Le résultat reste une estimation visuelle.</p></details>
-        <details><summary>Corriger une estimation</summary><p>Si le nom reconnu est faux, choisissez une référence de votre base. Si l’aliment n’existe pas, choisissez « ➕ Nouvel aliment… » : vous pouvez saisir son nom et ses valeurs nutritionnelles directement sous la ligne, l’ajouter immédiatement à votre base personnelle et poursuivre le repas sans passer par Réglages. Calories recalcule alors kcal et protéines avec cette nouvelle référence. « ↻ Recalculer » permet toujours de demander une estimation Luna si nécessaire.</p></details>
-        <details><summary>Ajouter manuellement</summary><p>Le menu propose d’abord les références de votre base personnelle, puis la base générale. La quantité s’exprime automatiquement dans l’unité de l’aliment (œuf, pot, tranche, part…) ou en grammes. Les calories/protéines se recalculent immédiatement. Pour un aliment ponctuel absent, utilisez « Autre aliment ».</p></details>
-        <details><summary>Ajouter un produit à ma base locale</summary><p>Vous pouvez toujours ajouter une référence dans Réglages → Base alimentaire locale. Mais pendant la correction d’un repas, un aliment absent peut désormais être créé directement dans la ligne : référence « pour 100 g » ou « par unité / portion », kcal, protéines et poids moyen facultatif. La nouvelle référence est enregistrée dans votre base personnelle et utilisée immédiatement.</p></details>
-        <details><summary>Calories et protéines</summary><p>Les calories des repas s’additionnent. Les calories dépensées par une activité sont déduites du bilan calorique net. Les protéines consommées s’additionnent et ne sont jamais déduites par le sport.</p></details>
-        <details><summary>Ajouter une activité</summary><p>Choisissez l’activité, puis sa source dans le menu proposé. La source habituelle peut être définie dans Réglages (par exemple Vélo → eFlow, Marche → Samsung Health, Vélo appart → David Douillet). Saisissez ensuite les kcal fournies par cette application ou cet appareil : Calories ne les ré-estime pas.</p></details>
-        <details><summary>Comprendre le bilan net</summary><p>Bilan net = calories alimentaires − calories d’activité. Le graphe est vert jusqu’à l’objectif et rouge uniquement pour la partie qui dépasse l’objectif.</p></details>
-        <details><summary>Ajouter une journée passée</summary><p>Utilisez les boutons Jour précédent / Aujourd’hui / Jour suivant ou choisissez directement une date. Les repas, activités et pesées peuvent être enregistrés à une date passée.</p></details>
-        <details><summary>Supprimer ou refaire une estimation</summary><p>Vous pouvez supprimer un repas, une activité ou une pesée. « Supprimer la journée » efface toutes les entrées de la date affichée après confirmation.</p></details>
-        <details><summary>Suivre le poids</summary><p>Enregistrez une pesée avec sa date. La courbe montre la tendance vers l’objectif de poids. Une mesure isolée ne suffit pas à conclure.</p></details>
-        <details><summary>Limites de l’analyse photo</summary><p>L’identification est souvent plus fiable que la quantité. Sauces, huiles, beurre, plats mélangés et portions sans repère visuel sont plus difficiles. Si l’aliment lui-même est mal reconnu, corrigez d’abord son nom pour refaire la référence nutritionnelle, puis ajustez les grammes.</p></details>
-      </div>
-      <div class="notice info">Les besoins caloriques et protéiques affichés sont des estimations et non une prescription médicale.</div>
-    </section>
-
-    <section id="view-settings" class="view" aria-labelledby="settings-title">
-      <h2 id="settings-title">Réglages</h2>
-      <div class="panel">
-        <h3>Profil</h3>
-        <div class="form-grid">
-          <label>Âge
-            <input id="set-age" type="number" min="18" max="120" />
-          </label>
-          <label>Sexe
-            <select id="set-sex">
-              <option value="male">Homme</option>
-              <option value="female">Femme</option>
-            </select>
-          </label>
-          <label>Taille (cm)
-            <input id="set-height" type="number" min="120" max="220" />
-          </label>
-          <label>Poids actuel (kg)
-            <input id="set-weight" type="number" min="30" max="250" step="0.1" />
-          </label>
-          <label>Objectif poids (kg)
-            <input id="set-goal-weight" type="number" min="30" max="250" step="0.1" />
-          </label>
-          <label>Activité habituelle
-            <select id="set-activity">
-              <option value="1.2">Faible</option>
-              <option value="1.375">Modérée</option>
-              <option value="1.55">Active</option>
-              <option value="1.725">Très active</option>
-            </select>
-          </label>
-          <label>Déficit cible (kcal/j)
-            <input id="set-deficit" type="number" min="0" max="750" step="25" />
-          </label>
-          <label>Protéines (g/kg/j)
-            <input id="set-protein-factor" type="number" min="0.5" max="2.5" step="0.1" />
-          </label>
-        </div>
-        <button id="save-settings" class="button primary full">Enregistrer les réglages</button>
-      </div>
-
-      <div class="panel">
-        <h3>Sources des activités</h3>
-        <p class="muted small">Définissez l’application ou l’appareil utilisé habituellement pour chaque activité. La source sera proposée automatiquement lors de la saisie.</p>
-        <div class="activity-source-settings">
-          <label>Course<input id="source-course" type="text" placeholder="Ex. Samsung Health" /></label>
-          <label>Gym<input id="source-gym" type="text" placeholder="Source habituelle" /></label>
-          <label>Machine musculation<input id="source-machine-musculation" type="text" placeholder="Source habituelle" /></label>
-          <label>Marche<input id="source-marche" type="text" placeholder="Ex. Samsung Health" /></label>
-          <label>Natation<input id="source-natation" type="text" placeholder="Source habituelle" /></label>
-          <label>Randonnée<input id="source-randonnee" type="text" placeholder="Source habituelle" /></label>
-          <label>Vélo<input id="source-velo" type="text" placeholder="Ex. eFlow" /></label>
-          <label>Vélo appart<input id="source-velo-appart" type="text" placeholder="Ex. David Douillet" /></label>
-        </div>
-        <button id="save-activity-sources" class="button primary full">Enregistrer les sources</button>
-      </div>
-
-      <div class="panel">
-        <h3>Base alimentaire locale</h3>
-        <p class="muted small">Ajoutez ici vos produits connus à partir de l’étiquette nutritionnelle. Votre base personnelle est consultée <strong>avant</strong> la base générale et avant tout appel à Luna.</p>
-
-        <div class="personal-food-form">
-          <h4>Ajouter une référence personnelle</h4>
-          <div class="form-grid">
-            <label>Nom du produit / aliment
-              <input id="personal-food-name" type="text" placeholder="Ex. Œuf, Kiri, riz cuit…" />
-            </label>
-            <label>Type de référence
-              <select id="personal-food-reference-mode">
-                <option value="per100g">Valeurs pour 100 g</option>
-                <option value="perUnit">Valeurs par unité / portion</option>
-              </select>
-            </label>
-          </div>
-
-          <div id="personal-food-per100-fields" class="form-grid">
-            <label>kcal / 100 g
-              <input id="personal-food-kcal100" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 143" />
-            </label>
-            <label>Protéines / 100 g
-              <input id="personal-food-protein100" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 13" />
-            </label>
-          </div>
-
-          <div id="personal-food-unit-fields" class="form-grid">
-            <label>Nom de l’unité / portion
-              <input id="personal-food-unit-name" type="text" placeholder="Ex. œuf, Kiri, pot, tranche, c. à soupe, part" />
-            </label>
-            <label>Poids moyen d’une unité (g) — facultatif
-              <input id="personal-food-unit-weight" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 55" />
-            </label>
-          </div>
-
-          <div id="personal-food-perunit-fields" class="form-grid" hidden>
-            <label>kcal pour 1 unité / portion
-              <input id="personal-food-unit-kcal" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 80" />
-            </label>
-            <label>Protéines pour 1 unité / portion
-              <input id="personal-food-unit-protein" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 6,5" />
-            </label>
-          </div>
-
-          <details id="personal-food-package-helper" class="package-helper">
-            <summary>Aide : calculer le poids d’une unité depuis un paquet</summary>
-            <div class="form-grid package-helper-grid">
-              <label>Poids total du paquet (g)
-                <input id="personal-food-package-weight" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Ex. 160" />
-              </label>
-              <label>Nombre d’unités / portions
-                <input id="personal-food-units" type="number" inputmode="decimal" min="0" step="1" placeholder="Ex. 4" />
-              </label>
+          <div class="settings-group reference-settings wide-group">
+            <div class="reference-head">
+              <h3>Informations de référence</h3>
+              <span>n'interviennent pas dans la formule Standard V1</span>
             </div>
-            <p id="personal-food-package-result" class="muted small"></p>
-          </details>
-          <p id="personal-food-form-status" class="muted small"></p>
-          <div class="personal-food-form-actions">
-            <button id="cancel-personal-food-edit" type="button" class="button secondary" hidden>Annuler</button>
-            <button id="save-personal-food" type="button" class="button primary">Ajouter à ma base</button>
+            <div class="reference-grid">
+              <label>Poids vélo <span>kg</span><input data-setting="bikeWeightKg" type="number" min="0" step="0.1"></label>
+              <label>Poids cycliste <span>kg</span><input data-setting="riderWeightKg" type="number" min="0" step="0.1"></label>
+              <label>Charge transportée <span>kg</span><input data-setting="cargoWeightKg" type="number" min="0" step="0.1"></label>
+              <label>Tension batterie <span>V</span><input data-setting="batteryVoltageV" type="number" min="0.1" step="0.1"></label>
+              <label>Vitesse moyenne <span>km/h</span><input data-setting="averageSpeedKmh" type="number" min="0.1" step="0.1"></label>
+            </div>
+            <div class="settings-note">Ces champs sont conservés pour la continuité avec la feuille Excel Yamaha historique et pour de futures extensions. Les modifier ne change pas le résultat énergétique de la V1 Standard.</div>
           </div>
         </div>
 
-        <div class="personal-food-section">
-          <h4>Ma base personnelle</h4>
-          <div id="personal-food-list" class="personal-food-list"></div>
+        <div class="settings-actions">
+          <span id="settingsSaved" class="save-message"></span>
+          <button id="saveSettingsBtn" class="primary-button">Enregistrer les paramètres</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-results" class="screen">
+      <div id="resultsEmpty" class="empty-state">
+        <div class="empty-icon">▥</div>
+        <h3>Pas encore de résultat</h3>
+        <p>Charge d'abord un fichier GPX dans l'onglet <strong>GPX</strong>.</p>
+      </div>
+
+      <div id="resultsContent" class="hidden">
+        <div class="card result-summary">
+          <div class="card-title-row">
+            <div>
+              <div class="section-kicker">PARCOURS ANALYSÉ</div>
+              <h2 id="resultFileName">—</h2>
+            </div>
+            <div class="mode-badge">Yamaha · Standard V1</div>
+          </div>
+          <div class="metrics four" id="routeMetrics"></div>
         </div>
 
-        <details class="food-db-details">
-          <summary>Voir la base générale intégrée</summary>
-          <div id="food-db-list" class="food-db-list"></div>
-        </details>
-      </div>
+        <section class="scenario scenario-one">
+          <div class="scenario-header"><div class="scenario-number">1</div><div><div class="section-kicker">RÉSULTAT 1</div><h2>Sans recharge</h2></div></div>
+          <div class="card scenario-result-card"><div class="metrics four" id="noRechargeMetrics"></div><div id="noRechargeStatus" class="scenario-note"></div></div>
+          <div class="card chart-card">
+            <div class="chart-heading">
+              <div><div class="section-kicker">GRAPHIQUE 1</div><h2>Parcours complet sans recharge</h2></div>
+              <div class="legend"><span><i class="dplus"></i>D+</span><span><i class="tour"></i>Tour</span><span><i class="turbo"></i>Turbo</span><span class="battery-scale-label">Batterie :</span><span><i class="battery-green"></i>&gt; 20 %</span><span><i class="battery-yellow"></i>20–10 %</span><span><i class="battery-red"></i>&lt; 10 %</span></div>
+            </div>
+            <div class="chart-scroll"><canvas id="chartNoRecharge" height="370"></canvas></div>
+          </div>
+        </section>
 
-      <div class="panel">
-        <h3>Analyse photo IA</h3>
-        <p class="muted small">Sur Vercel, laissez ce champ vide. Si l’application est publiée ailleurs, indiquez l’adresse complète du service d’analyse sécurisé.</p>
-        <label>Adresse API d’analyse (optionnel)
-          <input id="set-api-url" type="url" placeholder="https://mon-service.vercel.app/api/analyze" />
-        </label>
-        <div id="api-mode" class="notice info"></div>
-      </div>
+        <section class="scenario scenario-two">
+          <div class="scenario-header"><div class="scenario-number">2</div><div><div class="section-kicker">RÉSULTAT 2</div><h2>Avec recharge jusqu'au plein</h2></div></div>
+          <div class="card scenario-result-card recharge-card"><div id="rechargeRule" class="recharge-rule"></div><div class="metrics six" id="withRechargeMetrics"></div><div id="withRechargeStatus" class="scenario-note"></div></div>
+          <div class="card chart-card">
+            <div class="chart-heading">
+              <div><div class="section-kicker">GRAPHIQUE 2</div><h2>Parcours complet avec plein à 100 %</h2></div>
+              <div class="legend"><span><i class="dplus"></i>D+</span><span><i class="tour"></i>Tour</span><span><i class="turbo"></i>Turbo</span><span class="battery-scale-label">Batterie :</span><span><i class="battery-green"></i>&gt; 20 %</span><span><i class="battery-yellow"></i>20–10 %</span><span><i class="battery-red"></i>&lt; 10 %</span><span><i class="recharge"></i>Recharge</span></div>
+            </div>
+            <div class="chart-scroll"><canvas id="chartWithRecharge" height="370"></canvas></div>
+          </div>
+        </section>
 
-      <div class="panel danger-zone">
-        <h3>Données</h3>
-        <p class="muted small">Les repas, activités, objectifs, poids et votre base personnelle sont enregistrés uniquement dans le navigateur de cet appareil.</p>
-        <button id="export-data" class="button secondary full">Exporter mes données JSON</button>
-        <button id="clear-journal-data" class="button secondary full">Effacer les saisies de test</button>
-        <p class="muted small">« Effacer les saisies de test » supprime repas, activités et pesées mais conserve le profil, les réglages et votre base alimentaire personnelle.</p>
-        <button id="reset-data" class="button danger full">Réinitialiser complètement l’application</button>
+        <div class="card">
+          <div class="card-title-row"><div><div class="section-kicker">DÉTAIL COMPARATIF</div><h2>Tronçons</h2></div><button id="csvBtn" class="secondary-button">Exporter CSV</button></div>
+          <div class="table-wrap"><table><thead><tr><th>N°</th><th>Km début</th><th>Km fin</th><th>Dist.</th><th>D+</th><th>Mode</th><th>Conso</th><th>Cumul</th><th>Restant sans recharge</th><th>Restant avec recharge</th></tr></thead><tbody id="segmentsBody"></tbody></table></div>
+        </div>
       </div>
     </section>
   </main>
 
-  <nav class="bottom-nav" aria-label="Navigation principale">
-    <button class="nav-item active" data-view="today"><span>⌂</span><small>Jour</small></button>
-    <button class="nav-item" data-view="photo"><span>📷</span><small>Photo</small></button>
-    <button class="nav-item" data-view="history"><span>▤</span><small>Historique</small></button>
-    <button class="nav-item" data-view="weight"><span>⚖</span><small>Poids</small></button>
-    <button class="nav-item" data-view="help"><span>?</span><small>Aide</small></button>
-    <button class="nav-item" data-view="settings"><span>⚙</span><small>Réglages</small></button>
-  </nav>
+  <footer><strong>Simulateur Batterie GPX Yamaha</strong><br>Mode Standard V1 · branche Yamaha indépendante de la version Bosch.</footer>
 
-  <dialog id="meal-edit-dialog" class="meal-detail-dialog">
-    <div class="dialog-card">
-      <div class="eyebrow">REPAS ENREGISTRÉ</div>
-      <h2>Modifier le repas</h2>
-      <p id="meal-edit-name" class="muted"></p>
-
-      <div class="form-grid meal-edit-top-grid">
-        <label>Type de repas
-          <select id="meal-edit-type">
-            <option>Petit-déjeuner</option>
-            <option>Déjeuner</option>
-            <option>Dîner</option>
-            <option>Collation</option>
-            <option>Autre</option>
-          </select>
-        </label>
-        <label>Date
-          <input id="meal-edit-date" type="date" />
-        </label>
-      </div>
-
-      <div class="meal-edit-section-title">
-        <div>
-          <strong>Ingrédients du repas</strong>
-          <span>Modifiez le libellé, la quantité, les kcal ou les protéines.</span>
-        </div>
-        <button id="meal-edit-add-item" type="button" class="button secondary compact">+ Ingrédient</button>
-      </div>
-
-      <div id="meal-edit-items"></div>
-
-      <div class="meal-edit-total">
-        <span>Total du repas</span>
-        <strong><span id="meal-edit-total-kcal">0</span> kcal · <span id="meal-edit-total-protein">0</span> g protéines</strong>
-      </div>
-
-      <label class="meal-base-update-option">
-        <input id="meal-edit-update-base" type="checkbox" />
-        <span><strong>Mettre à jour ma base personnelle</strong><small>Uniquement pour les lignes dont vous avez corrigé directement les kcal/protéines. Si cette case reste décochée, les corrections concernent seulement ce repas.</small></span>
-      </label>
-
-      <p class="muted small">Choisir un aliment déjà présent dans « Ma base » ou « Base générale » recalcule immédiatement la ligne. Aucune mise à jour de votre base personnelle n’est faite silencieusement.</p>
-      <div class="dialog-actions">
-        <button id="meal-edit-cancel" type="button" class="button secondary">Annuler</button>
-        <button id="meal-edit-save" type="button" class="button primary">Enregistrer les modifications</button>
-      </div>
-    </div>
-  </dialog>
-
-  <datalist id="food-name-suggestions"></datalist>
-
-  <dialog id="setup-dialog">
-    <form method="dialog" id="setup-form" class="dialog-card">
-      <div class="eyebrow">PREMIER DÉMARRAGE</div>
-      <h2>Votre référence quotidienne</h2>
-      <p class="muted">Âge, poids de départ et objectif sont déjà renseignés. Il reste deux informations nécessaires au calcul du besoin calorique.</p>
-      <div class="form-grid">
-        <label>Sexe
-          <select id="setup-sex" required>
-            <option value="male">Homme</option>
-            <option value="female">Femme</option>
-          </select>
-        </label>
-        <label>Taille (cm)
-          <input id="setup-height" type="number" min="120" max="220" placeholder="175" required />
-        </label>
-        <label>Niveau d’activité
-          <select id="setup-activity" required>
-            <option value="1.2">Faible</option>
-            <option value="1.375" selected>Modérée</option>
-            <option value="1.55">Active</option>
-            <option value="1.725">Très active</option>
-          </select>
-        </label>
-      </div>
-      <div class="reference-box">
-        <strong>Prérempli</strong>
-        <span>73 ans · 74,0 kg → objectif 72,5 kg</span>
-        <span>Déficit doux : 225 kcal/j</span>
-      </div>
-      <button id="complete-setup" class="button primary full" value="default">Commencer</button>
-      <p class="footnote">Les calories et protéines sont des estimations, pas une prescription médicale.</p>
-    </form>
-  </dialog>
-
-  <script src="./app.js" defer></script>
+  <script src="simulator-core.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
